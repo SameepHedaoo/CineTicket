@@ -1,17 +1,27 @@
 package com.cineticket.auth.service;
 
 import org.springframework.stereotype.Service;
+
+import com.cineticket.auth.config.JwtUtil;
+import com.cineticket.auth.dto.AuthResponse;
 import com.cineticket.auth.dto.LoginRequest;
 import com.cineticket.auth.dto.RegisterRequest;
 import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.auth.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
+        this.passwordEncoder = new BCryptPasswordEncoder();
+
     }
 
     public String register(RegisterRequest request) {
@@ -20,21 +30,25 @@ public class AuthService {
         }
         UserEntity userEntity = new UserEntity();
         userEntity.setEmail(request.getEmail());
-        userEntity.setPassword(request.getPassword());
+        userEntity.setPassword(passwordEncoder.encode(request.getPassword()));
         userEntity.setRole("USER");
         userRepository.save(userEntity);
         return "User Saved";
     }
 
-    public String login(LoginRequest loginRequest) {
-        UserEntity userEntity = userRepository.findByEmail(loginRequest.getEmail());
-        if (userEntity == null) {
-            return "User not found";
-        } else if (!userEntity.getPassword().equals(loginRequest.getPassword())) {
-            return "Incorrect Password";
-        } else {
-            return "Login Successful";
+    public AuthResponse login(LoginRequest request) {
+
+        UserEntity user = userRepository.findByEmail(request.getEmail());
+
+        if (user == null) {
+            return new AuthResponse("Invalid credentials");
+        }
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return new AuthResponse("Invalid credentials");
         }
 
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        return new AuthResponse(token, "Login successful");
     }
 }

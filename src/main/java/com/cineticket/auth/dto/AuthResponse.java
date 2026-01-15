@@ -4,8 +4,13 @@ public class AuthResponse {
     private String token;
     private String message;
 
-    public AuthResponse(String result) {
-        this.message = result;
+    public AuthResponse(String message) {
+        this.message = message;
+    }
+
+    public AuthResponse(String token, String message) {
+        this.token = token;
+        this.message = message;
     }
 
     public String getToken() {
