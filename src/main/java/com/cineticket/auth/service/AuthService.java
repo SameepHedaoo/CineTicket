@@ -6,6 +6,7 @@ import com.cineticket.auth.config.JwtUtil;
 import com.cineticket.auth.dto.AuthResponse;
 import com.cineticket.auth.dto.LoginRequest;
 import com.cineticket.auth.dto.RegisterRequest;
+import com.cineticket.auth.dto.UserResponseDTO;
 import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.auth.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -50,5 +51,18 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
 
         return new AuthResponse(token, "Login successful");
+    }
+
+    public UserResponseDTO getCurrentUser(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email);
+        if (userEntity == null) {
+            throw new RuntimeException("User not found");
+        }
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
+        userResponseDTO.setEmail(userEntity.getEmail());
+        userResponseDTO.setId(userEntity.getId());
+        userResponseDTO.setRole(userEntity.getRole());
+        return userResponseDTO;
+
     }
 }
