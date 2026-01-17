@@ -5,6 +5,15 @@ public class UserResponseDTO {
     private String email;
     private String role;
 
+    public UserResponseDTO() {
+    }
+
+    public UserResponseDTO(Long id, String email, String role) {
+        this.id = id;
+        this.email = email;
+        this.role = role;
+    }
+
     public Long getId() {
         return id;
     }

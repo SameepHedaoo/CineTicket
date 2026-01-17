@@ -8,6 +8,7 @@ import com.cineticket.auth.dto.LoginRequest;
 import com.cineticket.auth.dto.RegisterRequest;
 import com.cineticket.auth.dto.UserResponseDTO;
 import com.cineticket.auth.entity.UserEntity;
+import com.cineticket.auth.enums.Role;
 import com.cineticket.auth.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +33,7 @@ public class AuthService {
         UserEntity userEntity = new UserEntity();
         userEntity.setEmail(request.getEmail());
         userEntity.setPassword(passwordEncoder.encode(request.getPassword()));
-        userEntity.setRole("USER");
+        userEntity.setRole(Role.USER);
         userRepository.save(userEntity);
         return "User Saved";
     }
@@ -48,7 +49,7 @@ public class AuthService {
             return new AuthResponse("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
         return new AuthResponse(token, "Login successful");
     }
@@ -61,7 +62,7 @@ public class AuthService {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
         userResponseDTO.setEmail(userEntity.getEmail());
         userResponseDTO.setId(userEntity.getId());
-        userResponseDTO.setRole(userEntity.getRole());
+        userResponseDTO.setRole(userEntity.getRole().name());
         return userResponseDTO;
 
     }
