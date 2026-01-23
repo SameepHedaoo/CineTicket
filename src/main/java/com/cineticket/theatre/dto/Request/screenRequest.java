@@ -1,6 +1,6 @@
 package com.cineticket.theatre.dto.Request;
 
-public class screenRequest {
+public class ScreenRequest {
     private String name;
     private long totalSeats;
 

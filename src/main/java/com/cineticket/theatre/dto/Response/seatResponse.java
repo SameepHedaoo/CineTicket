@@ -1,14 +1,16 @@
 package com.cineticket.theatre.dto.Response;
 
-public class seatResponse {
+public class SeatResponse {
     private Long id;
     private Long seatNumber;
     private String seatType;
     private boolean available;
 
-    public seatResponse(Long id, Long seatNumber, String seatType) {
+    public SeatResponse(Long id, Long seatNumber, String seatType, boolean available) {
+        this.id = id;
         this.seatNumber = seatNumber;
         this.seatType = seatType;
+        this.available = available;
     }
 
     public Long getSeatNumber() {

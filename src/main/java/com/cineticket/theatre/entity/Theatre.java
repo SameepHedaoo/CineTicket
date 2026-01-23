@@ -8,27 +8,29 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "theatres")
 public class Theatre {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
+
     @Column(nullable = false)
     private String name;
+
     @Column(nullable = false)
     private String city;
 
     @Column(nullable = false)
     private String address;
-    @Column(nullable = false)
-    private String screen;
 
-    @OneToMany(mappedBy = "theatre", cascade = CascadeType.ALL, orphanRemoval = true)
+    // A theatre has MANY screens
+    @OneToMany(mappedBy = "theatre", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Screen> screens = new ArrayList<>();
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -56,12 +58,11 @@ public class Theatre {
         this.address = address;
     }
 
-    public String getScreen() {
-        return screen;
+    public List<Screen> getScreens() {
+        return screens;
     }
 
-    public void setScreen(String screen) {
-        this.screen = screen;
+    public void setScreens(List<Screen> screens) {
+        this.screens = screens;
     }
-
 }

@@ -27,6 +27,7 @@ public class securityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/movies/**").permitAll()
+                        .requestMatchers("/theatres/**").permitAll() // allow access
                         .anyRequest().authenticated() // secure other endpoints
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

@@ -2,15 +2,15 @@ package com.cineticket.theatre.dto.Response;
 
 import java.util.List;
 
-public class screenResponse {
+public class ScreenResponse {
     private Long id;
     private String name;
-    private long totalSeats;
-    private List<seatResponse> seats;
+    private List<SeatResponse> seats;
 
-    public screenResponse(Long id, String name, Long totalSeats, List<seatResponse> seats) {
+    public ScreenResponse(Long id, String name, List<SeatResponse> seats) {
+        this.id = id;
         this.name = name;
-        this.totalSeats = totalSeats;
+        this.seats = seats;
     }
 
     public Long getId() {
@@ -25,15 +25,7 @@ public class screenResponse {
         this.name = name;
     }
 
-    public long getTotalSeats() {
-        return totalSeats;
-    }
-
-    public void setTotalSeats(long totalSeats) {
-        this.totalSeats = totalSeats;
-    }
-
-    public List<seatResponse> getSeats() {
+    public List<SeatResponse> getSeats() {
         return seats;
     }
 }

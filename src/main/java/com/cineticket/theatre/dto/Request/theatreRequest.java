@@ -1,6 +1,6 @@
 package com.cineticket.theatre.dto.Request;
 
-public class theatreRequest {
+public class TheatreRequest {
     private String name;
     private String city;
     private String address;

@@ -14,7 +14,7 @@ public class Seat {
     private String seatType;
     @Column(nullable = false)
     private boolean active = true;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "screen_id", nullable = false)
     private Screen screen;
 

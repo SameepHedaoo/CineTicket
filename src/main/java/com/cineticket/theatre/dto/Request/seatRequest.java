@@ -1,6 +1,6 @@
 package com.cineticket.theatre.dto.Request;
 
-public class seatRequest {
+public class SeatRequest {
     private Long seatNumber;
     private String seatType;
 
