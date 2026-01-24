@@ -1,106 +1,54 @@
-# Movie Ticket Booking System
+# 🎥 CineTicket — Movie Ticket Booking Microservices App
 
-src/main/java/com/cineticket/auth/
-│
-├── CineticketApplication.java      // Main Spring Boot app class
-│
-├── entity/
-│   └── User.java                   // Your JPA entity for users
-│
-├── repository/
-│   └── UserRepository.java         // JPA repository interface
-│
-├── dto/
-│   ├── RegisterRequest.java        // DTO for registration input
-│   ├── LoginRequest.java           // DTO for login input
-│   └── AuthResponse.java           // DTO for returning token + message
-│
-├── service/
-│   └── AuthService.java            // Business logic: register + login
-│
-├── controller/
-│   └── AuthController.java         // REST endpoints: /register, /login
-│
-└── security/
-|    ├── SecurityConfig.java         // Password encoder + Spring Security config
-|    └── JwtUtil.java                // JWT token generator + validator
-│
-├── movie/                    // 🎬 PHASE 3.1
-│   ├── entity/
-│   │   └── Movie.java
-│   │
-│   ├── repository/
-│   │   └── MovieRepository.java
-│   │
-│   ├── dto/
-│   │   ├── MovieRequest.java
-│   │   └── MovieResponse.java
-│   │
-│   ├── service/
-│   │   └── MovieService.java
-│   │
-│   └── controller/
-│       ├── MovieController.java       // public APIs
-│       └── AdminMovieController.java  // admin APIs
-│
-├── theatre/                  // 🏛️ PHASE 3.2
-│   ├── entity/
-│   │   ├── Theatre.java
-│   │   ├── Screen.java
-│   │   └── Seat.java
-│   │
-│   ├── repository/
-│   │   ├── TheatreRepository.java
-│   │   ├── ScreenRepository.java
-│   │   └── SeatRepository.java
-│   │
-│   ├── dto/
-│   │   ├── ScreenRequest.java
-│   │   └── SeatRequest.java
-        ── TheatreRequest.java
-        ── ScreenResponse.java
-        ── SeatResponse.java
-        ── TheatreResponse.java
-│   │
-│   ├── service/
-│   │   └── TheatreService.java
-│   │
-│   └── controller/
-│       └── AdminTheatreController.java
-│
-├── show/                     // ⏰ PHASE 3.3
-│   ├── entity/
-│   │   └── Show.java
-│   │
-│   ├── repository/
-│   │   └── ShowRepository.java
-│   │
-│   ├── dto/
-│   │   ├── ShowRequest.java
-│   │   └── ShowResponse.java
-│   │
-│   ├── service/
-│   │   └── ShowService.java
-│   │
-│   └── controller/
-│       ├── ShowController.java
-│       └── AdminShowController.java
-│
-├── booking/                  // 💺 PHASE 3.4
-│   ├── entity/
-│   │   └── Booking.java
-│   │
-│   ├── repository/
-│   │   └── BookingRepository.java
-│   │
-│   ├── dto/
-│   │   ├── BookingRequest.java
-│   │   └── BookingResponse.java
-│   │
-│   ├── service/
-│   │   └── BookingService.java
-│   │
-│   └── controller/
-│       └── BookingController.java
+Welcome to **CineTicket** — a microservices‑based movie ticket booking backend built with Java and Spring Boot!  
+Think of this as the core engine that could power a movie booking platform like BookMyShow, Fandango, or that kiosk next to the popcorn machine 🍿
+
+---
+
+## 🚀 What’s This?
+
+**CineTicket** is a backend system for managing:
+
+- 🎟️ User authentication (register & login)
+- 🎬 Movie listings
+- 🎭 Theatres & screens
+- 🪑 Seats
+- 🕰️ Show scheduling
+- 🧾 Booking tickets
+
+It’s designed as a structured set of Spring Boot modules that handle different parts of the movie booking domain.
+---
+
+## 🧠 Features (aka “Why it’s cool!”)
+
+- 💡 User authentication with JWT
+- 📊 Admin & public APIs for movies
+- 🏛️ Theatre, screen, seat management
+- ⏰ Show scheduling and management
+- 🎫 Booking service with full create/read functionality
+- 📦 Clean layered architecture (controllers → services → repositories)
+
+---
+
+## 🧩 Repo Structure
+
+Here’s a quick look at how things are organized:
+src/main/java/com/cineticket/
+├── auth/ # Authentication (register/login)
+├── movie/ # Manage movie data
+├── theatre/ # Theatres + screens + seats
+├── show/ # Showtimes
+├── booking/ # Seat bookings
 
 
+Each module uses Entities, Repositories, DTOs, Services, Controllers — the classic Spring Boot MVC pattern.
+
+---
+
+## 🛠️ Tech Stack
+
+- 🧪 Java 17
+- 🌱 Spring Boot
+- 📡 Spring Security (JWT)
+- 🗄️ JPA + any SQL database
+- 🛠️ Gradle build system
