@@ -1,5 +1,6 @@
 package com.cineticket.theatre.service;
 
+import com.cineticket.theatre.dto.Request.TheatreRequest;
 import com.cineticket.theatre.dto.Response.ScreenResponse;
 import com.cineticket.theatre.dto.Response.SeatResponse;
 import com.cineticket.theatre.dto.Response.TheatreResponse;
@@ -8,6 +9,7 @@ import com.cineticket.theatre.entity.Seat;
 import com.cineticket.theatre.entity.Theatre;
 import com.cineticket.theatre.repository.TheatreRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +24,7 @@ public class TheatreService {
     }
 
     public List<TheatreResponse> getTheatresByCity(String city) {
-        List<Theatre> theatres = theatreRepository.findByCityIgnoreCase(city);
+        List<Theatre> theatres = theatreRepository.findByCitySafe(city);
         List<TheatreResponse> response = new ArrayList<>();
 
         for (Theatre theatre : theatres) {
@@ -56,5 +58,14 @@ public class TheatreService {
                 theatre.getCity(),
                 theatre.getAddress(),
                 screens);
+    }
+
+    // ADMIN
+    public void addTheatre(TheatreRequest request) {
+        Theatre theatre = new Theatre();
+        theatre.setName(request.getName());
+        theatre.setCity(request.getCity());
+        theatre.setAddress(request.getAddress());
+        theatreRepository.save(theatre);
     }
 }

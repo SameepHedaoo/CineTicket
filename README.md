@@ -55,9 +55,12 @@ src/main/java/com/cineticket/auth/
 │   │   └── SeatRepository.java
 │   │
 │   ├── dto/
-│   │   ├── TheatreRequest.java
 │   │   ├── ScreenRequest.java
-│   │   └── SeatResponse.java
+│   │   └── SeatRequest.java
+        ── TheatreRequest.java
+        ── ScreenResponse.java
+        ── SeatResponse.java
+        ── TheatreResponse.java
 │   │
 │   ├── service/
 │   │   └── TheatreService.java

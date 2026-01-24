@@ -24,14 +24,8 @@ public class securityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // disable CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/movies/**").permitAll()
-                        .requestMatchers("/theatres/**").permitAll() // allow access
-                        .anyRequest().authenticated() // secure other endpoints
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
+                        .anyRequest().permitAll() // allow ALL requests
+                );
         return http.build();
     }
 

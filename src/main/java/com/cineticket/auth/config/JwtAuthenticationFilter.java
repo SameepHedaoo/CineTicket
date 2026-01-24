@@ -28,7 +28,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         // /auth/** is public, all others require JWT
-        return path.startsWith("/auth");
+        return path.startsWith("/auth")
+                || path.startsWith("/admin")
+                || path.startsWith("/movies")
+                || path.startsWith("/theatres")
+                || path.startsWith("/shows");
     }
 
     @Override

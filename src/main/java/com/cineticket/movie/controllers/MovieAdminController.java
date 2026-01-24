@@ -12,9 +12,10 @@ import com.cineticket.movie.dto.MovieRequest;
 @RequestMapping("/admin/movies")
 public class MovieAdminController {
 
-    MovieService movieService;
+    private final MovieService movieService;
 
-    public void adminController(MovieService movieService) {
+    // ✅ Correct constructor
+    public MovieAdminController(MovieService movieService) {
         this.movieService = movieService;
     }
 

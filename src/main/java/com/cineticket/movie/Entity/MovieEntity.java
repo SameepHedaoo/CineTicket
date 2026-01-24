@@ -10,13 +10,6 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "movies")
 public class MovieEntity {
-    // - id
-    // - title
-    // - description
-    // - duration
-    // - language
-    // - rating
-    // - genre
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
