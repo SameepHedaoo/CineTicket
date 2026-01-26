@@ -13,6 +13,7 @@ import com.cineticket.show.dto.ShowRequest;
 import com.cineticket.show.dto.ShowResponse;
 import com.cineticket.theatre.entity.Screen;
 import com.cineticket.theatre.repository.ScreenRepository;
+import com.cineticket.theatre.repository.TheatreRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -23,7 +24,7 @@ public class ShowService {
     private final ScreenRepository screenRepository;
 
     public ShowService(ShowRepository showRepository, MovieRepository movieRepository,
-            ScreenRepository screenRepository) {
+            ScreenRepository screenRepository, TheatreRepository theatreRepository) {
         this.showRepository = showRepository;
         this.movieRepository = movieRepository;
         this.screenRepository = screenRepository;
@@ -127,6 +128,24 @@ public class ShowService {
                 show.getStartTime(),
                 show.getPrice(),
                 null);
+    }
+
+    public List<ShowResponse> getShowsByMovieAndTheatre(Long movieId, Long theatreId) {
+        List<Show> shows = showRepository.findByMovieIdAndScreen_Theatre_Id(movieId, theatreId);
+
+        if (shows.isEmpty()) {
+            return shows.stream()
+                    .map(this::mapToShowResponse)
+                    .toList();
+        }
+
+        List<ShowResponse> response = new ArrayList<>();
+        for (Show show : shows) {
+            response.add(mapToShowResponse(show));
+        }
+
+        return response;
+
     }
 
 }

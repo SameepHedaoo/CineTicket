@@ -17,6 +17,10 @@ public class ScreenResponse {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
@@ -28,4 +32,9 @@ public class ScreenResponse {
     public List<SeatResponse> getSeats() {
         return seats;
     }
+
+    public void setSeats(List<SeatResponse> seats) {
+        this.seats = seats;
+    }
+
 }

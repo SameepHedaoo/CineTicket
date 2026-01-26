@@ -23,8 +23,7 @@ public class AdminShowController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ShowResponse> createShow(
-            @RequestBody ShowRequest request) {
+    public ResponseEntity<ShowResponse> createShow(@RequestBody ShowRequest request) {
         ShowResponse response = showService.createShow(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

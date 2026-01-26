@@ -1,8 +1,17 @@
 package com.cineticket.theatre.dto.Request;
 
 public class ScreenRequest {
+    private Long theatreId;
     private String name;
     private long totalSeats;
+
+    public Long getTheatreId() {
+        return theatreId;
+    }
+
+    public void setTheatreId(Long theatreId) {
+        this.theatreId = theatreId;
+    }
 
     public String getName() {
         return name;

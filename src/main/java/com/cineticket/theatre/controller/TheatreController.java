@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cineticket.theatre.dto.Request.ScreenRequest;
 import com.cineticket.theatre.dto.Request.TheatreRequest;
 import com.cineticket.theatre.dto.Response.TheatreResponse;
 import com.cineticket.theatre.entity.Theatre;
@@ -44,6 +45,13 @@ public class TheatreController {
     public String addTheatre(@RequestBody TheatreRequest request) {
         theatreService.addTheatre(request);
         return "Theatre Added";
+    }
+
+    // Post - add a screen
+    @PostMapping("/screens")
+    public String addScreen(@RequestBody ScreenRequest request) {
+        theatreService.createScreen(request);
+        return "Screen Added";
     }
 
 }
