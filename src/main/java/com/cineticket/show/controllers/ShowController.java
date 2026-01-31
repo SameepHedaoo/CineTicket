@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cineticket.show.Service.ShowService;
 import com.cineticket.show.dto.ShowResponse;
+import com.cineticket.show.dto.ShowSeatResponse;
 
 @RestController
 @RequestMapping("/shows")
@@ -42,4 +43,10 @@ public class ShowController {
             @RequestParam Long theatreId) {
         return showService.getShowsByMovieAndTheatre(movieId, theatreId);
     }
+
+    @GetMapping("/{showId}/seats")
+    public List<ShowSeatResponse> getSeats(@PathVariable Long showId) {
+        return showService.getShowSeats(showId);
+    }
+
 }

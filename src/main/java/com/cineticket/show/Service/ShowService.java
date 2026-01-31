@@ -3,16 +3,23 @@ package com.cineticket.show.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.cineticket.movie.Entity.MovieEntity;
 import com.cineticket.movie.Repository.MovieRepository;
 import com.cineticket.show.Entity.Show;
+import com.cineticket.show.Entity.ShowSeat;
+import com.cineticket.show.Entity.ShowSeatStatus;
 import com.cineticket.show.Repository.ShowRepository;
+import com.cineticket.show.Repository.ShowSeatRepository;
 import com.cineticket.show.dto.ShowRequest;
 import com.cineticket.show.dto.ShowResponse;
+import com.cineticket.show.dto.ShowSeatResponse;
 import com.cineticket.theatre.entity.Screen;
+import com.cineticket.theatre.entity.Seat;
 import com.cineticket.theatre.repository.ScreenRepository;
+import com.cineticket.theatre.repository.SeatRepository;
 import com.cineticket.theatre.repository.TheatreRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,6 +29,11 @@ public class ShowService {
     private final ShowRepository showRepository;
     private final MovieRepository movieRepository;
     private final ScreenRepository screenRepository;
+    @Autowired
+    private ShowSeatRepository showSeatRepository;
+
+    @Autowired
+    private SeatRepository seatRepository;
 
     public ShowService(ShowRepository showRepository, MovieRepository movieRepository,
             ScreenRepository screenRepository, TheatreRepository theatreRepository) {
@@ -65,6 +77,16 @@ public class ShowService {
 
         // save
         Show savedShow = showRepository.save(show);
+        List<Seat> seats = seatRepository
+                .findByScreenId(savedShow.getScreen().getId());
+
+        for (Seat seat : seats) {
+            ShowSeat showSeat = new ShowSeat();
+            showSeat.setShow(savedShow);
+            showSeat.setSeat(seat);
+            showSeat.setStatus(ShowSeatStatus.AVAILABLE);
+            showSeatRepository.save(showSeat);
+        }
         return mapToShowResponse(savedShow);
     }
 
@@ -146,6 +168,19 @@ public class ShowService {
 
         return response;
 
+    }
+
+    public List<ShowSeatResponse> getShowSeats(Long showId) {
+
+        List<ShowSeat> seats = showSeatRepository.findByShowId(showId);
+
+        return seats.stream().map(seat -> {
+            ShowSeatResponse dto = new ShowSeatResponse();
+            dto.setShowSeatId(seat.getId());
+            dto.setSeatNumber(seat.getSeat().getSeatNumber());
+            dto.setStatus(seat.getStatus());
+            return dto;
+        }).toList();
     }
 
 }
