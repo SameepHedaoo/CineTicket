@@ -19,7 +19,7 @@ public class MovieService {
     }
 
     // ADMIN
-    public void addMovie(MovieRequest movieRequest) {
+    public MovieResponse addMovie(MovieRequest movieRequest) {
         MovieEntity movie = new MovieEntity();
         movie.setTitle(movieRequest.getTitle());
         movie.setDescription(movieRequest.getDescription());
@@ -27,7 +27,14 @@ public class MovieService {
         movie.setDuration(movieRequest.getDurationMinutes());
         movie.setGenre(movieRequest.getGenre());
 
-        movieRepository.save(movie);
+        MovieEntity saved = movieRepository.save(movie);
+        return new MovieResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getDescription(),
+                saved.getLanguage(),
+                saved.getDuration(),
+                saved.getGenre());
     }
 
     // PUBLIC

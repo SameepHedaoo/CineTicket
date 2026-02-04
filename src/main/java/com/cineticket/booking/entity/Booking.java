@@ -3,7 +3,6 @@ package com.cineticket.booking.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.show.Entity.Show;
 import com.cineticket.show.Entity.ShowSeat;
 
@@ -16,8 +15,8 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private UserEntity user;
+    @Column(nullable = true)
+    private Long userId;
 
     @ManyToOne
     private Show show;
@@ -27,6 +26,9 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
     private LocalDateTime lockExpiryTime;
 
@@ -38,12 +40,12 @@ public class Booking {
         this.id = id;
     }
 
-    public UserEntity getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(UserEntity user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Show getShow() {
@@ -68,6 +70,14 @@ public class Booking {
 
     public void setStatus(BookingStatus status) {
         this.status = status;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 
     public LocalDateTime getLockExpiryTime() {

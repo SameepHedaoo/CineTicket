@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cineticket.show.Service.ShowService;
 import com.cineticket.show.dto.ShowResponse;
 import com.cineticket.show.dto.ShowSeatResponse;
+import com.cineticket.show.dto.SeatLayoutResponse;
 
 @RestController
 @RequestMapping("/shows")
@@ -47,6 +48,11 @@ public class ShowController {
     @GetMapping("/{showId}/seats")
     public List<ShowSeatResponse> getSeats(@PathVariable Long showId) {
         return showService.getShowSeats(showId);
+    }
+
+    @GetMapping("/{showId}/layout")
+    public SeatLayoutResponse getSeatLayout(@PathVariable Long showId) {
+        return showService.getSeatLayout(showId);
     }
 
 }

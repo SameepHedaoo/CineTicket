@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cineticket.movie.Service.MovieService;
 import com.cineticket.movie.dto.MovieRequest;
+import com.cineticket.movie.dto.MovieResponse;
 
 @RestController
 @RequestMapping("/admin/movies")
@@ -20,8 +21,7 @@ public class MovieAdminController {
     }
 
     @PostMapping("/add")
-    public String addMovie(@RequestBody MovieRequest request) {
-        movieService.addMovie(request);
-        return "Movie Added";
+    public MovieResponse addMovie(@RequestBody MovieRequest request) {
+        return movieService.addMovie(request);
     }
 }

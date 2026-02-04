@@ -52,3 +52,53 @@ Each module uses Entities, Repositories, DTOs, Services, Controllers — the cla
 - 📡 Spring Security (JWT)
 - 🗄️ JPA + any SQL database
 - 🛠️ Gradle build system
+
+---
+
+## Postman Run Order
+
+Run the collection in this order (top to bottom), and make sure the app is running:
+
+1. `GET /health` (sanity check)
+2. `Auth - Register User`
+3. `Auth - Login User`
+4. `Auth - Login Admin`
+5. Admin setup requests (movie → theatre → screen → show)
+6. User flow (shows → layout → booking → payment → confirm)
+
+---
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Client
+    participant API as CineTicket API
+    participant DB as Database
+
+    User->>Client: Select movie, theatre, show
+    Client->>API: GET /shows?city=...
+    API->>DB: Fetch shows
+    DB-->>API: Shows
+    API-->>Client: Shows
+
+    User->>Client: Choose seats
+    Client->>API: GET /shows/{showId}/seat-layout
+    API->>DB: Fetch seat layout
+    DB-->>API: Seats
+    API-->>Client: Seat layout
+
+    User->>Client: Finalize selection
+    Client->>API: POST /bookings/initiate (showId, showSeatIds)
+    API->>DB: Lock seats + create booking
+    DB-->>API: Booking (IN_PROGRESS)
+    API-->>Client: Booking + lockExpiryTime
+
+    User->>Client: Confirm booking
+    Client->>API: POST /bookings/{bookingId}/confirm
+    API->>DB: Mark seats BOOKED + confirm booking
+    DB-->>API: Booking CONFIRMED
+    API-->>Client: Booking confirmed
+```

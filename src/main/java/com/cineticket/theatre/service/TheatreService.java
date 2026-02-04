@@ -72,12 +72,18 @@ public class TheatreService {
     }
 
     // ADMIN
-    public void addTheatre(TheatreRequest request) {
+    public TheatreResponse addTheatre(TheatreRequest request) {
         Theatre theatre = new Theatre();
         theatre.setName(request.getName());
         theatre.setCity(request.getCity());
         theatre.setAddress(request.getAddress());
-        theatreRepository.save(theatre);
+        Theatre saved = theatreRepository.save(theatre);
+        return new TheatreResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getCity(),
+                saved.getAddress(),
+                new ArrayList<>());
     }
 
     @Transactional

@@ -16,6 +16,8 @@ import com.cineticket.show.Repository.ShowSeatRepository;
 import com.cineticket.show.dto.ShowRequest;
 import com.cineticket.show.dto.ShowResponse;
 import com.cineticket.show.dto.ShowSeatResponse;
+import com.cineticket.show.dto.ShowSeatLayoutResponse;
+import com.cineticket.show.dto.SeatLayoutResponse;
 import com.cineticket.theatre.entity.Screen;
 import com.cineticket.theatre.entity.Seat;
 import com.cineticket.theatre.repository.ScreenRepository;
@@ -181,6 +183,21 @@ public class ShowService {
             dto.setStatus(seat.getStatus());
             return dto;
         }).toList();
+    }
+
+    public SeatLayoutResponse getSeatLayout(Long showId) {
+        List<ShowSeat> seats = showSeatRepository.findByShowId(showId);
+        List<ShowSeatLayoutResponse> layout = seats.stream().map(seat -> {
+            ShowSeatLayoutResponse dto = new ShowSeatLayoutResponse();
+            dto.setShowSeatId(seat.getId());
+            dto.setSeatId(seat.getSeat().getId());
+            dto.setSeatNumber(seat.getSeat().getSeatNumber());
+            dto.setSeatType(seat.getSeat().getSeatType());
+            dto.setStatus(seat.getStatus());
+            return dto;
+        }).toList();
+        String screenName = seats.isEmpty() ? null : seats.get(0).getShow().getScreen().getScreenName();
+        return new SeatLayoutResponse(showId, screenName, layout);
     }
 
 }

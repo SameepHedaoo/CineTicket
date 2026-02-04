@@ -28,11 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         // /auth/** is public, all others require JWT
-        return path.startsWith("/auth")
-                || path.startsWith("/admin")
-                || path.startsWith("/movies")
-                || path.startsWith("/theatres")
-                || path.startsWith("/shows");
+        return path.startsWith("/auth");
     }
 
     @Override
@@ -55,9 +51,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String email = claims.getSubject();
             String role = claims.get("role", String.class); // ADMIN or USER
+            Object userIdObj = claims.get("userId");
+            Long userId = null;
+            if (userIdObj instanceof Integer) {
+                userId = ((Integer) userIdObj).longValue();
+            } else if (userIdObj instanceof Long) {
+                userId = (Long) userIdObj;
+            } else if (userIdObj != null) {
+                userId = Long.valueOf(userIdObj.toString());
+            }
 
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    email,
+                    userId,
                     null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 

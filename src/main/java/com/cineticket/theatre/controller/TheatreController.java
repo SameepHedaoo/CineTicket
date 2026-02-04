@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cineticket.theatre.dto.Request.ScreenRequest;
 import com.cineticket.theatre.dto.Request.TheatreRequest;
+import com.cineticket.theatre.dto.Response.ScreenResponse;
 import com.cineticket.theatre.dto.Response.TheatreResponse;
 import com.cineticket.theatre.entity.Theatre;
 import com.cineticket.theatre.repository.TheatreRepository;
@@ -18,7 +19,6 @@ import com.cineticket.theatre.service.TheatreService;
 
 @RestController
 @RequestMapping("/theatres")
-
 public class TheatreController {
     private final TheatreService theatreService;
     private final TheatreRepository theatreRepository;
@@ -40,18 +40,16 @@ public class TheatreController {
         return theatres.stream().map(Theatre::getName).toList();
     }
 
-    // POST — add a theatre
+    // POST - add a theatre
     @PostMapping("/add")
-    public String addTheatre(@RequestBody TheatreRequest request) {
-        theatreService.addTheatre(request);
-        return "Theatre Added";
+    public TheatreResponse addTheatre(@RequestBody TheatreRequest request) {
+        return theatreService.addTheatre(request);
     }
 
     // Post - add a screen
     @PostMapping("/screens")
-    public String addScreen(@RequestBody ScreenRequest request) {
-        theatreService.createScreen(request);
-        return "Screen Added";
+    public ScreenResponse addScreen(@RequestBody ScreenRequest request) {
+        return theatreService.createScreen(request);
     }
 
 }

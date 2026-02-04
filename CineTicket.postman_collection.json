@@ -1,0 +1,626 @@
+{
+  "info": {
+    "name": "CineTicket - Admin + User Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{userToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health - Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"health ok\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test(\"health status\", function () {",
+              "  pm.expect(json.status).to.eql(\"ok\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\"\n}"
+        }
+      }
+      ,
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"register status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"login user status\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"login user token\", function () {",
+              "  pm.expect(json.token).to.be.a(\"string\");",
+              "});",
+              "if (json.token) {",
+              "  pm.environment.set(\"userToken\", json.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin@123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"login admin status\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"login admin token\", function () {",
+              "  pm.expect(json.token).to.be.a(\"string\");",
+              "});",
+              "if (json.token) {",
+              "  pm.environment.set(\"adminToken\", json.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Create Movie",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/movies/add",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "movies",
+            "add"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Interstellar\",\n  \"description\": \"Space epic\",\n  \"language\": \"EN\",\n  \"durationMinutes\": 169,\n  \"genre\": \"Sci-Fi\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"create movie status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"movie id present\", function () {",
+              "  pm.expect(json.id).to.be.a(\"number\");",
+              "});",
+              "pm.environment.set(\"movieId\", json.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Create Theatre",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/theatres/add",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "theatres",
+            "add"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Inox Mall\",\n  \"city\": \"{{city}}\",\n  \"address\": \"Main Road\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"create theatre status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"theatre id present\", function () {",
+              "  pm.expect(json.id).to.be.a(\"number\");",
+              "});",
+              "pm.environment.set(\"theatreId\", json.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Create Screen",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/theatres/screens",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "theatres",
+            "screens"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"theatreId\": {{theatreId}},\n  \"name\": \"Screen 1\",\n  \"totalSeats\": 30\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"create screen status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"screen id present\", function () {",
+              "  pm.expect(json.id).to.be.a(\"number\");",
+              "});",
+              "pm.environment.set(\"screenId\", json.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Create Show",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/shows/add",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "shows",
+            "add"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"movieId\": {{movieId}},\n  \"screenId\": {{screenId}},\n  \"startTime\": \"2026-02-04T20:00:00\",\n  \"endTime\": \"2026-02-04T22:45:00\",\n  \"price\": 250.00\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"create show status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"show id present\", function () {",
+              "  pm.expect(json.showId || json.id).to.be.a(\"number\");",
+              "});",
+              "pm.environment.set(\"showId\", json.showId || json.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Get Shows By City",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/shows?city={{city}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "shows"
+          ],
+          "query": [
+            {
+              "key": "city",
+              "value": "{{city}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"get shows status\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Get Seat Layout",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/shows/{{showId}}/layout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "shows",
+            "{{showId}}",
+            "layout"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const payload = pm.response.json();",
+              "pm.test(\"seat layout status\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"seat layout has seats\", function () {",
+              "  pm.expect(payload.seats).to.be.an(\"array\");",
+              "});",
+              "const seats = payload.seats || [];",
+              "const selected = seats.filter(s => s.status === \"AVAILABLE\").slice(0, 2).map(s => s.showSeatId);",
+              "if (!selected.length) {",
+              "  throw new Error(\"No available seats returned.\");",
+              "}",
+              "pm.environment.set(\"showSeatIds\", JSON.stringify(selected));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Initiate Booking (Finalize Seats)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/bookings/initiate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings",
+            "initiate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"showId\": {{showId}},\n  \"showSeatIds\": {{showSeatIds}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"booking initiate status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"booking id present\", function () {",
+              "  pm.expect(json.bookingId).to.be.a(\"number\");",
+              "});",
+              "pm.environment.set(\"bookingId\", json.bookingId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Initiate Payment",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/bookings/{{bookingId}}/payment/initiate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings",
+            "{{bookingId}}",
+            "payment",
+            "initiate"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"payment initiate status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"payment pending\", function () {",
+              "  pm.expect(json.paymentStatus).to.eql(\"PENDING\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Confirm Payment",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/bookings/{{bookingId}}/payment/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings",
+            "{{bookingId}}",
+            "payment",
+            "confirm"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"payment confirm status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"payment paid\", function () {",
+              "  pm.expect(json.paymentStatus).to.eql(\"PAID\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Confirm Booking",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/bookings/{{bookingId}}/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings",
+            "{{bookingId}}",
+            "confirm"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"booking confirm status\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "pm.test(\"booking confirmed\", function () {",
+              "  pm.expect(json.status).to.eql(\"CONFIRMED\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "city",
+      "value": "Pune"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    }
+  ]
+}

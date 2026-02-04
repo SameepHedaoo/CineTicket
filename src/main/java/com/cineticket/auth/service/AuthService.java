@@ -10,7 +10,6 @@ import com.cineticket.auth.dto.UserResponseDTO;
 import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.auth.enums.Role;
 import com.cineticket.auth.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -19,10 +18,10 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
 
     }
 
@@ -49,7 +48,7 @@ public class AuthService {
             return new AuthResponse("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId());
 
         return new AuthResponse(token, "Login successful");
     }
