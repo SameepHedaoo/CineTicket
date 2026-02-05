@@ -3,11 +3,8 @@ package com.cineticket.booking.service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import com.cineticket.booking.dto.BookingResponse;
 import com.cineticket.booking.dto.LockSeatsRequest;
@@ -25,13 +22,6 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ShowSeatService showSeatService;
-
-    private static final Map<String, BigDecimal> SEAT_TYPE_MULTIPLIERS = Map.of(
-            "REGULAR", BigDecimal.valueOf(1.0),
-            "SILVER", BigDecimal.valueOf(1.15),
-            "GOLD", BigDecimal.valueOf(1.30),
-            "PREMIUM", BigDecimal.valueOf(1.50),
-            "VIP", BigDecimal.valueOf(2.00));
 
     public BookingService(BookingRepository bookingRepository, ShowSeatService showSeatService) {
         this.bookingRepository = bookingRepository;
@@ -53,7 +43,7 @@ public class BookingService {
         booking.setLockExpiryTime(LocalDateTime.now().plusMinutes(10));
 
         Booking saved = bookingRepository.save(booking);
-        return mapToBookingResponse(saved);
+        return BookingMapper.toBookingResponse(saved);
     }
 
     @Transactional
@@ -61,22 +51,33 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow();
 
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            return BookingMapper.toBookingResponse(booking);
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new RuntimeException("Booking is cancelled");
+        }
+
         if (booking.getStatus() != BookingStatus.IN_PROGRESS
                 && booking.getStatus() != BookingStatus.PENDING) {
             throw new RuntimeException("Invalid state");
         }
 
         if (booking.getLockExpiryTime().isBefore(LocalDateTime.now())) {
+            showSeatService.releaseSeats(booking.getShowSeats());
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setPaymentStatus(PaymentStatus.FAILED);
             throw new RuntimeException("Lock expired");
         }
 
-        showSeatService.markSeatsBooked(booking.getShowSeats());
-
-        if (booking.getPaymentStatus() == null || booking.getPaymentStatus() == PaymentStatus.NOT_STARTED) {
-            booking.setPaymentStatus(PaymentStatus.PAID);
+        if (booking.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new RuntimeException("Payment not completed");
         }
+
+        showSeatService.markSeatsBooked(booking.getShowSeats());
         booking.setStatus(BookingStatus.CONFIRMED);
-        return mapToBookingResponse(booking);
+        return BookingMapper.toBookingResponse(booking);
     }
 
     @Transactional
@@ -85,20 +86,20 @@ public class BookingService {
                 .orElseThrow();
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            return mapToBookingResponse(booking);
+            return BookingMapper.toBookingResponse(booking);
         }
 
         showSeatService.releaseSeats(booking.getShowSeats());
 
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setPaymentStatus(PaymentStatus.FAILED);
-        return mapToBookingResponse(booking);
+        return BookingMapper.toBookingResponse(booking);
     }
 
     public BookingResponse getBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow();
-        return mapToBookingResponse(booking);
+        return BookingMapper.toBookingResponse(booking);
     }
 
     @Transactional
@@ -111,7 +112,7 @@ public class BookingService {
         }
 
         booking.setPaymentStatus(PaymentStatus.PENDING);
-        return mapToBookingResponse(booking);
+        return BookingMapper.toBookingResponse(booking);
     }
 
     @Transactional
@@ -123,10 +124,17 @@ public class BookingService {
             throw new RuntimeException("Booking is not in progress");
         }
 
+        if (booking.getLockExpiryTime().isBefore(LocalDateTime.now())) {
+            showSeatService.releaseSeats(booking.getShowSeats());
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setPaymentStatus(PaymentStatus.FAILED);
+            throw new RuntimeException("Lock expired");
+        }
+
         booking.setPaymentStatus(PaymentStatus.PAID);
         booking.setStatus(BookingStatus.CONFIRMED);
         showSeatService.markSeatsBooked(booking.getShowSeats());
-        return mapToBookingResponse(booking);
+        return BookingMapper.toBookingResponse(booking);
     }
 
     @Scheduled(fixedDelay = 60000)
@@ -141,32 +149,5 @@ public class BookingService {
             booking.setStatus(BookingStatus.CANCELLED);
             booking.setPaymentStatus(PaymentStatus.FAILED);
         }
-    }
-
-    private BookingResponse mapToBookingResponse(Booking booking) {
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        if (booking.getShow() != null && booking.getShow().getPrice() != null) {
-            for (ShowSeat seat : booking.getShowSeats()) {
-                String seatType = seat.getSeat().getSeatType();
-                BigDecimal multiplier = SEAT_TYPE_MULTIPLIERS.getOrDefault(
-                        seatType == null ? "REGULAR" : seatType.toUpperCase(Locale.ROOT),
-                        BigDecimal.ONE);
-                totalPrice = totalPrice.add(booking.getShow().getPrice().multiply(multiplier));
-            }
-        }
-
-        List<String> seatNumbers = booking.getShowSeats().stream()
-                .map(seat -> String.valueOf(seat.getSeat().getSeatNumber()))
-                .toList();
-
-        return new BookingResponse(
-                booking.getId(),
-                booking.getShow() == null ? null : booking.getShow().getId(),
-                booking.getUserId(),
-                seatNumbers,
-                totalPrice.doubleValue(),
-                booking.getStatus() == null ? null : booking.getStatus().name(),
-                booking.getPaymentStatus() == null ? null : booking.getPaymentStatus().name(),
-                booking.getLockExpiryTime() == null ? null : booking.getLockExpiryTime().toString());
     }
 }

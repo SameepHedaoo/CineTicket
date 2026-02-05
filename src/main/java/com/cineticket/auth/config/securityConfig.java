@@ -38,6 +38,7 @@ public class securityConfig {
                         .requestMatchers(HttpMethod.POST, "/theatres/add", "/theatres/screens").hasRole("ADMIN")
                         // Booking requires authenticated users
                         .requestMatchers("/bookings/**").authenticated()
+                        .requestMatchers("/payments/**").authenticated()
                         // Everything else is denied by default
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
