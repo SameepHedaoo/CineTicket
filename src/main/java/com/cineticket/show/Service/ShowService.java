@@ -23,6 +23,11 @@ import com.cineticket.theatre.entity.Seat;
 import com.cineticket.theatre.repository.ScreenRepository;
 import com.cineticket.theatre.repository.SeatRepository;
 import com.cineticket.theatre.repository.TheatreRepository;
+import com.cineticket.auth.entity.UserEntity;
+import com.cineticket.auth.enums.Role;
+import com.cineticket.auth.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.transaction.Transactional;
 
@@ -31,6 +36,7 @@ public class ShowService {
     private final ShowRepository showRepository;
     private final MovieRepository movieRepository;
     private final ScreenRepository screenRepository;
+    private final UserRepository userRepository;
     @Autowired
     private ShowSeatRepository showSeatRepository;
 
@@ -38,10 +44,12 @@ public class ShowService {
     private SeatRepository seatRepository;
 
     public ShowService(ShowRepository showRepository, MovieRepository movieRepository,
-            ScreenRepository screenRepository, TheatreRepository theatreRepository) {
+            ScreenRepository screenRepository, TheatreRepository theatreRepository,
+            UserRepository userRepository) {
         this.showRepository = showRepository;
         this.movieRepository = movieRepository;
         this.screenRepository = screenRepository;
+        this.userRepository = userRepository;
 
     }
 
@@ -59,6 +67,7 @@ public class ShowService {
         // fetch screen
         Screen screen = screenRepository.findById(request.getScreenId())
                 .orElseThrow(() -> new RuntimeException("Screen not found"));
+        enforceManagerTheatreAccess(screen.getTheatre() != null ? screen.getTheatre().getId() : null);
         // Overlapping time
         List<Show> overlappingShows = showRepository.findOverlappingShows(
                 screen.getId(),
@@ -93,9 +102,12 @@ public class ShowService {
     }
 
     public void deleteShow(Long showId) {
-        if (!showRepository.existsById(showId)) {
-            throw new RuntimeException("Show not found");
-        }
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new RuntimeException("Show not found"));
+        Long theatreId = show.getScreen() != null && show.getScreen().getTheatre() != null
+                ? show.getScreen().getTheatre().getId()
+                : null;
+        enforceManagerTheatreAccess(theatreId);
         showRepository.deleteById(showId);
     }
 
@@ -211,6 +223,30 @@ public class ShowService {
                 show.getEndTime(),
                 show.getPrice(),
                 layout);
+    }
+
+    private void enforceManagerTheatreAccess(Long theatreId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return;
+        }
+        boolean isManager = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_THEATRE_MANAGER".equals(a.getAuthority()));
+        if (!isManager) {
+            return;
+        }
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof Long)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        UserEntity user = userRepository.findById((Long) principal)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getRole() != Role.THEATRE_MANAGER) {
+            return;
+        }
+        if (theatreId == null || user.getTheatreId() == null || !theatreId.equals(user.getTheatreId())) {
+            throw new RuntimeException("Not allowed for this theatre");
+        }
     }
 
 }

@@ -6,13 +6,38 @@ import Shows from "./pages/Shows";
 import SeatLayout from "./pages/SeatLayout";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Manager from "./pages/Manager";
 import "./App.css";
+
+const parseJwt = (token) => {
+  if (!token) {
+    return null;
+  }
+  try {
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => `%${("00" + c.charCodeAt(0).toString(16)).slice(-2)}`)
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    return null;
+  }
+};
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [role, setRole] = useState(() => parseJwt(localStorage.getItem("token"))?.role || null);
 
   useEffect(() => {
-    const updateToken = () => setToken(localStorage.getItem("token"));
+    const updateToken = () => {
+      const nextToken = localStorage.getItem("token");
+      setToken(nextToken);
+      setRole(parseJwt(nextToken)?.role || null);
+    };
     window.addEventListener("auth-changed", updateToken);
     window.addEventListener("storage", updateToken);
     return () => {
@@ -41,9 +66,16 @@ function App() {
             <NavLink to="/shows" className="nav-link">
               Shows
             </NavLink>
-            <NavLink to="/admin" className="nav-link">
-              Admin
-            </NavLink>
+            {role === "ADMIN" && (
+              <NavLink to="/admin" className="nav-link">
+                Admin
+              </NavLink>
+            )}
+            {role === "THEATRE_MANAGER" && (
+              <NavLink to="/manager" className="nav-link">
+                Manager
+              </NavLink>
+            )}
             {token ? (
               <button className="secondary" type="button" onClick={handleLogout}>
                 Logout
@@ -64,6 +96,7 @@ function App() {
             <Route path="/shows/:showId/layout" element={<SeatLayout />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/manager" element={<Manager />} />
           </Routes>
         </main>
       </div>

@@ -15,6 +15,11 @@ import com.cineticket.show.Entity.Show;
 import com.cineticket.show.Repository.ShowRepository;
 import com.cineticket.show.Repository.ShowSeatRepository;
 import com.cineticket.booking.repository.BookingRepository;
+import com.cineticket.auth.entity.UserEntity;
+import com.cineticket.auth.enums.Role;
+import com.cineticket.auth.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.transaction.Transactional;
 
@@ -32,19 +37,22 @@ public class TheatreService {
     private final ShowRepository showRepository;
     private final ShowSeatRepository showSeatRepository;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
     public TheatreService(TheatreRepository theatreRepository,
             ScreenRepository screenRepository,
             SeatRepository seatRepository,
             ShowRepository showRepository,
             ShowSeatRepository showSeatRepository,
-            BookingRepository bookingRepository) {
+            BookingRepository bookingRepository,
+            UserRepository userRepository) {
         this.theatreRepository = theatreRepository;
         this.screenRepository = screenRepository;
         this.seatRepository = seatRepository;
         this.showRepository = showRepository;
         this.showSeatRepository = showSeatRepository;
         this.bookingRepository = bookingRepository;
+        this.userRepository = userRepository;
     }
 
     public List<TheatreResponse> getTheatresByCity(String city) {
@@ -56,6 +64,12 @@ public class TheatreService {
         }
 
         return response;
+    }
+
+    public TheatreResponse getTheatreById(Long theatreId) {
+        Theatre theatre = theatreRepository.findById(theatreId)
+                .orElseThrow(() -> new RuntimeException("Theatre not found"));
+        return mapToTheatreResponse(theatre);
     }
 
     private TheatreResponse mapToTheatreResponse(Theatre theatre) {
@@ -104,6 +118,7 @@ public class TheatreService {
 
         Theatre theatre = theatreRepository.findById(request.getTheatreId())
                 .orElseThrow(() -> new RuntimeException("Theatre not found"));
+        enforceManagerTheatreAccess(theatre.getId());
 
         // Create Screen
         Screen screen = new Screen();
@@ -144,6 +159,22 @@ public class TheatreService {
     }
 
     @Transactional
+    public void deleteScreen(Long screenId) {
+        Screen screen = screenRepository.findById(screenId)
+                .orElseThrow(() -> new RuntimeException("Screen not found"));
+        Long theatreId = screen.getTheatre() != null ? screen.getTheatre().getId() : null;
+        enforceManagerTheatreAccess(theatreId);
+        List<Show> shows = showRepository.findByScreenId(screenId);
+        for (Show show : shows) {
+            bookingRepository.deleteByShow_Id(show.getId());
+            showSeatRepository.deleteByShowId(show.getId());
+            showRepository.deleteById(show.getId());
+        }
+        seatRepository.deleteByScreenId(screenId);
+        screenRepository.delete(screen);
+    }
+
+    @Transactional
     public void deleteTheatre(Long theatreId) {
         Theatre theatre = theatreRepository.findById(theatreId)
                 .orElseThrow(() -> new RuntimeException("Theatre not found"));
@@ -154,6 +185,30 @@ public class TheatreService {
             showRepository.deleteById(show.getId());
         }
         theatreRepository.delete(theatre);
+    }
+
+    private void enforceManagerTheatreAccess(Long theatreId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return;
+        }
+        boolean isManager = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_THEATRE_MANAGER".equals(a.getAuthority()));
+        if (!isManager) {
+            return;
+        }
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof Long)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        UserEntity user = userRepository.findById((Long) principal)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getRole() != Role.THEATRE_MANAGER) {
+            return;
+        }
+        if (theatreId == null || user.getTheatreId() == null || !theatreId.equals(user.getTheatreId())) {
+            throw new RuntimeException("Not allowed for this theatre");
+        }
     }
 
 }

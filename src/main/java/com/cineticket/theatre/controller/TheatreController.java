@@ -41,6 +41,12 @@ public class TheatreController {
     }
 
     @CrossOrigin(origins = "http://localhost:5173")
+    @GetMapping("/{theatreId}")
+    public TheatreResponse getTheatreById(@PathVariable Long theatreId) {
+        return theatreService.getTheatreById(theatreId);
+    }
+
+    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/names")
     public List<String> getTheatreNamesByCity(@RequestParam String city) {
         List<Theatre> theatres = theatreRepository.findByCitySafe(city);
@@ -65,6 +71,13 @@ public class TheatreController {
     @DeleteMapping("/{theatreId}")
     public ResponseEntity<Void> deleteTheatre(@PathVariable Long theatreId) {
         theatreService.deleteTheatre(theatreId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @CrossOrigin(origins = "http://localhost:5173")
+    @DeleteMapping("/screens/{screenId}")
+    public ResponseEntity<Void> deleteScreen(@PathVariable Long screenId) {
+        theatreService.deleteScreen(screenId);
         return ResponseEntity.noContent().build();
     }
 

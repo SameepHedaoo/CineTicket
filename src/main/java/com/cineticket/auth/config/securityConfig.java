@@ -33,9 +33,16 @@ public class securityConfig {
                         .requestMatchers("/auth/**", "/health").permitAll()
                         // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/movies/**", "/theatres/**", "/shows/**").permitAll()
+                        // Manager + admin endpoints
+                        .requestMatchers(HttpMethod.POST, "/admin/shows/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/admin/movies/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/admin/shows/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/theatres/screens").hasAnyRole("ADMIN", "THEATRE_MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/theatres/screens/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         // Admin-only endpoints
+                        .requestMatchers("/admin/theatre-managers/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/theatres/add", "/theatres/screens").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/theatres/add").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/theatres/**").hasRole("ADMIN")
                         // Booking requires authenticated users
                         .requestMatchers("/bookings/**").authenticated()

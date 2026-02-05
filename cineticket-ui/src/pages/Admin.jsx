@@ -19,6 +19,8 @@ function Admin() {
 
     const [deleteMovieId, setDeleteMovieId] = useState("");
     const [deleteTheatreId, setDeleteTheatreId] = useState("");
+    const [managerEmail, setManagerEmail] = useState("");
+    const [managerTheatreId, setManagerTheatreId] = useState("");
 
     const [theatreForm, setTheatreForm] = useState({
         name: "Inox Mall",
@@ -82,8 +84,10 @@ function Admin() {
             if (!token) {
                 throw new Error("Token missing");
             }
+            localStorage.setItem("token", token);
             localStorage.setItem("adminToken", token);
             setAdminToken(token);
+            window.dispatchEvent(new Event("auth-changed"));
             setAuthMessage("Admin authenticated.");
         } catch (err) {
             console.error("Admin login failed:", err);
@@ -238,6 +242,64 @@ function Admin() {
                     </div>
                     <button className="primary" type="submit">
                         Delete Movie
+                    </button>
+                </form>
+
+                <form
+                    className="card admin-card"
+                    onSubmit={(event) =>
+                        handleSubmit(event, async () => {
+                            if (!managerEmail || !managerTheatreId) {
+                                throw new Error("Provide manager email and theatre.");
+                            }
+                            await adminApi.post("/admin/theatre-managers", {
+                                email: managerEmail,
+                                theatreId: Number(managerTheatreId),
+                            });
+                            setManagerEmail("");
+                            setManagerTheatreId("");
+                            return "Theatre manager assigned.";
+                        })
+                    }
+                >
+                    <div className="card-title">Assign Theatre Manager</div>
+                    <div className="field">
+                        <span>Manager Email</span>
+                        <input
+                            type="email"
+                            value={managerEmail}
+                            onChange={(e) => setManagerEmail(e.target.value)}
+                            placeholder="manager@example.com"
+                            required
+                        />
+                    </div>
+                    <div className="field">
+                        <span>Filter theatres by city</span>
+                        <select value={city} onChange={(e) => setCity(e.target.value)}>
+                            {CITIES.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="field">
+                        <span>Theatre</span>
+                        <select
+                            value={managerTheatreId}
+                            onChange={(e) => setManagerTheatreId(e.target.value)}
+                            required
+                        >
+                            <option value="">Select theatre</option>
+                            {theatres.map((theatre) => (
+                                <option key={theatre.id} value={theatre.id}>
+                                    {theatre.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button className="primary" type="submit">
+                        Assign Manager
                     </button>
                 </form>
 

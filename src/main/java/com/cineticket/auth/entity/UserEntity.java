@@ -22,6 +22,9 @@ public class UserEntity {
     @Column(nullable = false)
     private Role role;
 
+    @Column(nullable = true)
+    private Long theatreId;
+
     public Long getId() {
         return id;
     }
@@ -52,6 +55,14 @@ public class UserEntity {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public Long getTheatreId() {
+        return theatreId;
+    }
+
+    public void setTheatreId(Long theatreId) {
+        this.theatreId = theatreId;
     }
 
 }

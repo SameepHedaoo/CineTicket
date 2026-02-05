@@ -2,5 +2,6 @@ package com.cineticket.auth.enums;
 
 public enum Role {
     USER,
-    ADMIN
+    ADMIN,
+    THEATRE_MANAGER
 }

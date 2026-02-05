@@ -10,4 +10,6 @@ import com.cineticket.theatre.entity.Seat;
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findByScreenId(Long screenId);
+
+    void deleteByScreenId(Long screenId);
 }

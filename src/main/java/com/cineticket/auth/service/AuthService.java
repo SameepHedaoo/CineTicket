@@ -48,7 +48,11 @@ public class AuthService {
             return new AuthResponse("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId());
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().name(),
+                user.getId(),
+                user.getTheatreId());
 
         return new AuthResponse(token, "Login successful");
     }
