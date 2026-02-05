@@ -36,6 +36,7 @@ public class securityConfig {
                         // Admin-only endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/theatres/add", "/theatres/screens").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/theatres/**").hasRole("ADMIN")
                         // Booking requires authenticated users
                         .requestMatchers("/bookings/**").authenticated()
                         .requestMatchers("/payments/**").authenticated()

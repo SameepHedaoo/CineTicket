@@ -196,8 +196,21 @@ public class ShowService {
             dto.setStatus(seat.getStatus());
             return dto;
         }).toList();
-        String screenName = seats.isEmpty() ? null : seats.get(0).getShow().getScreen().getScreenName();
-        return new SeatLayoutResponse(showId, screenName, layout);
+        Show show = seats.isEmpty() ? getShowById(showId) : seats.get(0).getShow();
+        String screenName = show.getScreen() != null ? show.getScreen().getScreenName() : null;
+        String theatreName = show.getScreen() != null && show.getScreen().getTheatre() != null
+                ? show.getScreen().getTheatre().getName()
+                : null;
+        String movieName = show.getMovie() != null ? show.getMovie().getTitle() : null;
+        return new SeatLayoutResponse(
+                showId,
+                movieName,
+                theatreName,
+                screenName,
+                show.getStartTime(),
+                show.getEndTime(),
+                show.getPrice(),
+                layout);
     }
 
 }

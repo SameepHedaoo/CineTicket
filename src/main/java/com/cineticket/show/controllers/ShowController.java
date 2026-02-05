@@ -7,12 +7,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import com.cineticket.show.Service.ShowService;
 import com.cineticket.show.dto.ShowResponse;
 import com.cineticket.show.dto.ShowSeatResponse;
 import com.cineticket.show.dto.SeatLayoutResponse;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/shows")
 public class ShowController {

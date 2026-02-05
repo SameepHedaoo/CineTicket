@@ -11,6 +11,10 @@ import com.cineticket.theatre.entity.Theatre;
 import com.cineticket.theatre.repository.ScreenRepository;
 import com.cineticket.theatre.repository.SeatRepository;
 import com.cineticket.theatre.repository.TheatreRepository;
+import com.cineticket.show.Entity.Show;
+import com.cineticket.show.Repository.ShowRepository;
+import com.cineticket.show.Repository.ShowSeatRepository;
+import com.cineticket.booking.repository.BookingRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -25,13 +29,22 @@ public class TheatreService {
     private final TheatreRepository theatreRepository;
     private final ScreenRepository screenRepository;
     private final SeatRepository seatRepository;
+    private final ShowRepository showRepository;
+    private final ShowSeatRepository showSeatRepository;
+    private final BookingRepository bookingRepository;
 
     public TheatreService(TheatreRepository theatreRepository,
             ScreenRepository screenRepository,
-            SeatRepository seatRepository) {
+            SeatRepository seatRepository,
+            ShowRepository showRepository,
+            ShowSeatRepository showSeatRepository,
+            BookingRepository bookingRepository) {
         this.theatreRepository = theatreRepository;
         this.screenRepository = screenRepository;
         this.seatRepository = seatRepository;
+        this.showRepository = showRepository;
+        this.showSeatRepository = showSeatRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     public List<TheatreResponse> getTheatresByCity(String city) {
@@ -128,6 +141,19 @@ public class TheatreService {
                 savedScreen.getId(),
                 savedScreen.getScreenName(),
                 seatResponses);
+    }
+
+    @Transactional
+    public void deleteTheatre(Long theatreId) {
+        Theatre theatre = theatreRepository.findById(theatreId)
+                .orElseThrow(() -> new RuntimeException("Theatre not found"));
+        List<Show> shows = showRepository.findByScreen_Theatre_Id(theatreId);
+        for (Show show : shows) {
+            bookingRepository.deleteByShow_Id(show.getId());
+            showSeatRepository.deleteByShowId(show.getId());
+            showRepository.deleteById(show.getId());
+        }
+        theatreRepository.delete(theatre);
     }
 
 }

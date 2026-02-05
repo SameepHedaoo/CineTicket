@@ -37,12 +37,14 @@ implementation 'org.springframework.security:spring-security-crypto'
     // Oracle JDBC
     implementation 'com.oracle.database.jdbc:ojdbc8:21.9.0.0'
 
+    // H2 (tests only)
+    testImplementation 'com.h2database:h2'
+
     // Dev tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // Testing (optional)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
 }
 
 // Gradle 8.3 compatible test config

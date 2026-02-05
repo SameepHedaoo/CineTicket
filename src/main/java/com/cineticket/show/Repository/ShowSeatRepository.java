@@ -11,4 +11,6 @@ public interface ShowSeatRepository extends JpaRepository<ShowSeat, Long> {
     List<ShowSeat> findByShowId(Long showId);
 
     List<ShowSeat> findByIdIn(List<Long> ids);
+
+    void deleteByShowId(Long showId);
 }
