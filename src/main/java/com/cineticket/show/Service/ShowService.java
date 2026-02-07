@@ -156,14 +156,20 @@ public class ShowService {
     }
 
     private ShowResponse mapToShowResponse(Show show) {
+        Long showId = show.getId();
+        int totalSeats = showId == null ? 0 : Math.toIntExact(showSeatRepository.countByShowId(showId));
+        int availableSeats = showId == null
+                ? 0
+                : Math.toIntExact(showSeatRepository.countByShowIdAndStatus(showId, ShowSeatStatus.AVAILABLE));
 
         return new ShowResponse(
-                show.getId(),
+                showId,
                 show.getMovie().getTitle(),
                 show.getScreen().getScreenName(),
                 show.getStartTime(),
                 show.getPrice(),
-                null);
+                availableSeats,
+                totalSeats);
     }
 
     public List<ShowResponse> getShowsByMovieAndTheatre(Long movieId, Long theatreId) {

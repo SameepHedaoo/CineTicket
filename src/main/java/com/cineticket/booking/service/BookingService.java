@@ -102,6 +102,13 @@ public class BookingService {
         return BookingMapper.toBookingResponse(booking);
     }
 
+    public List<BookingResponse> getBookingsForUser(Long userId) {
+        List<Booking> bookings = bookingRepository.findByUserIdOrderByIdDesc(userId);
+        return bookings.stream()
+                .map(BookingMapper::toBookingResponse)
+                .toList();
+    }
+
     @Transactional
     public BookingResponse initiatePayment(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)

@@ -4,6 +4,14 @@ import { api } from "../api/api";
 
 const REFRESH_INTERVAL_MS = 15000;
 const RESERVATION_SECONDS = 5 * 60;
+const ROW_SIZE = 10;
+const SEAT_TYPE_MULTIPLIERS = {
+    REGULAR: 1.0,
+    SILVER: 1.15,
+    GOLD: 1.3,
+    PREMIUM: 1.5,
+    VIP: 2.0,
+};
 
 function SeatLayout() {
     const { showId } = useParams();
@@ -18,6 +26,7 @@ function SeatLayout() {
     const [lastRefreshAt, setLastRefreshAt] = useState(null);
     const [reservationEndsAt, setReservationEndsAt] = useState(null);
     const [now, setNow] = useState(Date.now());
+    const [zoom, setZoom] = useState(1);
 
     const fetchLayout = async ({ silent = false } = {}) => {
         if (!showId) {
@@ -106,6 +115,21 @@ function SeatLayout() {
         return [...items].sort((a, b) => (a.seatNumber || 0) - (b.seatNumber || 0));
     }, [layout]);
 
+    const rows = useMemo(() => {
+        const grouped = [];
+        for (let i = 0; i < seats.length; i += ROW_SIZE) {
+            grouped.push(seats.slice(i, i + ROW_SIZE));
+        }
+        return grouped;
+    }, [seats]);
+
+    const getRowLabel = (index) => {
+        const first = Math.floor(index / 26);
+        const second = index % 26;
+        const base = String.fromCharCode(65 + second);
+        return first > 0 ? `${String.fromCharCode(64 + first)}${base}` : base;
+    };
+
     const selectedSeatNumbers = useMemo(() => {
         const selected = new Set(selectedSeats);
         return seats
@@ -115,8 +139,33 @@ function SeatLayout() {
 
     const seatPrice = layout?.price;
     const priceNumber = seatPrice !== null && seatPrice !== undefined ? Number(seatPrice) : null;
-    const totalPrice =
-        priceNumber !== null && selectedSeats.length > 0 ? priceNumber * selectedSeats.length : null;
+    const seatPriceForType = (seatType) => {
+        if (priceNumber === null) {
+            return null;
+        }
+        const multiplier =
+            SEAT_TYPE_MULTIPLIERS[String(seatType || "REGULAR").toUpperCase()] ?? 1.0;
+        return priceNumber * multiplier;
+    };
+
+    const seatTypePrices = useMemo(() => {
+        if (!seats.length) {
+            return [];
+        }
+        const types = Array.from(
+            new Set(seats.map((seat) => String(seat.seatType || "REGULAR").toUpperCase()))
+        );
+        return types.map((type) => ({
+            type,
+            price: seatPriceForType(type),
+        }));
+    }, [seats, priceNumber]);
+
+    const totalPrice = selectedSeats.reduce((sum, id) => {
+        const seat = seats.find((item) => item.showSeatId === id);
+        const priceForSeat = seatPriceForType(seat?.seatType);
+        return sum + (priceForSeat ?? 0);
+    }, 0);
 
     const remainingMs = reservationEndsAt ? Math.max(reservationEndsAt - now, 0) : 0;
     const remainingMinutes = Math.floor(remainingMs / 60000);
@@ -186,14 +235,12 @@ function SeatLayout() {
                 <div>
                     <h2>Seat Layout</h2>
                     <p className="subtle">
-                        {layout?.movieName || "Movie"} • {layout?.theatreName || "Theatre"} •{" "}
-                        {layout?.screenName || "Screen"} • Show {layout?.showId || showId}
+                        {layout?.movieName || "Movie"} - {layout?.theatreName || "Theatre"} -{" "}
+                        {layout?.screenName || "Screen"} - Show {layout?.showId || showId}
                     </p>
                     <p className="subtle">
                         Auto-refreshing every {Math.round(REFRESH_INTERVAL_MS / 1000)}s
-                        {lastRefreshAt
-                            ? ` • Updated ${lastRefreshAt.toLocaleTimeString()}`
-                            : ""}
+                        {lastRefreshAt ? ` - Updated ${lastRefreshAt.toLocaleTimeString()}` : ""}
                     </p>
                 </div>
             </div>
@@ -211,20 +258,49 @@ function SeatLayout() {
                 <span className="legend-item selected">Selected</span>
                 <span className="legend-item locked">Locked</span>
                 <span className="legend-item booked">Booked</span>
+                {priceNumber !== null && (
+                    <span className="legend-item price">Base: ₹{priceNumber.toFixed(0)}</span>
+                )}
             </div>
 
             <div className="seat-layout">
-                <div className="seat-grid">
-                    {seats.map((seat) => (
-                        <div
-                            key={seat.showSeatId}
-                            className={`seat ${String(seat.status || "").toLowerCase()} ${seat.status === "AVAILABLE" ? "selectable" : ""} ${selectedSeats.includes(seat.showSeatId) ? "selected" : ""}`}
-                            title={`Seat ${seat.seatNumber} • ${seat.seatType || "REGULAR"} • ${priceNumber !== null ? `₹${priceNumber}` : "Price TBD"}`}
-                            onClick={() => toggleSeat(seat)}
-                        >
-                            {seat.seatNumber}
+                <div className="seat-map">
+                    <div className="seat-toolbar">
+                        <div className="screen-label">Screen</div>
+                        <div className="zoom-control">
+                            <span>Zoom</span>
+                            <input
+                                type="range"
+                                min="0.8"
+                                max="1.4"
+                                step="0.1"
+                                value={zoom}
+                                onChange={(e) => setZoom(Number(e.target.value))}
+                            />
                         </div>
-                    ))}
+                    </div>
+                    <div className="seat-grid" style={{ transform: `scale(${zoom})` }}>
+                        {rows.map((row, rowIndex) => (
+                            <div key={`row-${rowIndex}`} className="seat-row">
+                                <div className="row-label">{getRowLabel(rowIndex)}</div>
+                                <div className="row-seats">
+                                    {row.map((seat) => {
+                                        const priceForSeat = seatPriceForType(seat.seatType);
+                                        return (
+                                            <div
+                                                key={seat.showSeatId}
+                                                className={`seat ${String(seat.status || "").toLowerCase()} ${seat.status === "AVAILABLE" ? "selectable" : ""} ${selectedSeats.includes(seat.showSeatId) ? "selected" : ""}`}
+                                                title={`Seat ${seat.seatNumber} - ${seat.seatType || "REGULAR"} - ${priceForSeat !== null ? `₹${priceForSeat.toFixed(0)}` : "Price TBD"}`}
+                                                onClick={() => toggleSeat(seat)}
+                                            >
+                                                {seat.seatNumber}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <aside className="card summary-card">
@@ -240,9 +316,7 @@ function SeatLayout() {
                     <div className="summary-row">
                         <span>Showtime</span>
                         <span>
-                            {layout?.startTime
-                                ? new Date(layout.startTime).toLocaleString()
-                                : "TBD"}
+                            {layout?.startTime ? new Date(layout.startTime).toLocaleString() : "TBD"}
                         </span>
                     </div>
                     <div className="summary-row">
@@ -250,12 +324,26 @@ function SeatLayout() {
                         <span>{selectedSeatNumbers.length ? selectedSeatNumbers.join(", ") : "None"}</span>
                     </div>
                     <div className="summary-row">
-                        <span>Seat price</span>
+                        <span>Base price</span>
                         <span>{priceNumber !== null ? `₹${priceNumber.toFixed(2)}` : "TBD"}</span>
                     </div>
+                    {seatTypePrices.length > 1 && (
+                        <div className="summary-row">
+                            <span>Seat types</span>
+                            <span>
+                                {seatTypePrices
+                                    .map((item) =>
+                                        item.price !== null
+                                            ? `${item.type} ₹${item.price.toFixed(0)}`
+                                            : item.type
+                                    )
+                                    .join(", ")}
+                            </span>
+                        </div>
+                    )}
                     <div className="summary-row total">
                         <span>Total</span>
-                        <span>{totalPrice !== null ? `₹${totalPrice.toFixed(2)}` : "TBD"}</span>
+                        <span>{selectedSeats.length ? `₹${totalPrice.toFixed(2)}` : "TBD"}</span>
                     </div>
 
                     {reservationEndsAt && selectedSeats.length > 0 && (

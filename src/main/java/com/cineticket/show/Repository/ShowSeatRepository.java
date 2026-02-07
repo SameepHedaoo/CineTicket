@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.cineticket.show.Entity.ShowSeat;
+import com.cineticket.show.Entity.ShowSeatStatus;
 
 public interface ShowSeatRepository extends JpaRepository<ShowSeat, Long> {
 
@@ -13,4 +14,8 @@ public interface ShowSeatRepository extends JpaRepository<ShowSeat, Long> {
     List<ShowSeat> findByIdIn(List<Long> ids);
 
     void deleteByShowId(Long showId);
+
+    long countByShowId(Long showId);
+
+    long countByShowIdAndStatus(Long showId, ShowSeatStatus status);
 }

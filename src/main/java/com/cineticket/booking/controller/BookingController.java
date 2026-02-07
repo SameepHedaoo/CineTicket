@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -59,6 +60,11 @@ public class BookingController {
     @GetMapping("/{bookingId}")
     public ResponseEntity<BookingResponse> get(@PathVariable Long bookingId) {
         return ResponseEntity.ok(bookingService.getBooking(bookingId));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<BookingResponse>> mine() {
+        return ResponseEntity.ok(bookingService.getBookingsForUser(getCurrentUserId()));
     }
 
     private Long getCurrentUserId() {

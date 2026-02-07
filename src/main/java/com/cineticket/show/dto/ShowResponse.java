@@ -10,15 +10,17 @@ public class ShowResponse {
     private LocalDateTime startTime;
     private BigDecimal price;
     private Integer availableSeats;
+    private Integer totalSeats;
 
     public ShowResponse(Long showId, String movieName, String screenName, LocalDateTime startTime, BigDecimal price,
-            Integer availableSeats) {
+            Integer availableSeats, Integer totalSeats) {
         this.showId = showId;
         this.movieName = movieName;
         this.screenName = screenName;
         this.startTime = startTime;
         this.price = price;
         this.availableSeats = availableSeats;
+        this.totalSeats = totalSeats;
 
     }
 
@@ -68,6 +70,14 @@ public class ShowResponse {
 
     public void setAvailableSeats(Integer availableSeats) {
         this.availableSeats = availableSeats;
+    }
+
+    public Integer getTotalSeats() {
+        return totalSeats;
+    }
+
+    public void setTotalSeats(Integer totalSeats) {
+        this.totalSeats = totalSeats;
     }
 
 }

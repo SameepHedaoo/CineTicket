@@ -11,9 +11,17 @@ public class BookingResponse {
     private String status;
     private String paymentStatus;
     private String lockExpiryTime;
+    private String movieName;
+    private String theatreName;
+    private String screenName;
+    private String showStartTime;
+    private String showEndTime;
+    private Double basePrice;
 
     public BookingResponse(Long bookingId, Long showId, Long userId, List<String> seats, Double totalPrice,
-            String status, String paymentStatus, String lockExpiryTime) {
+            String status, String paymentStatus, String lockExpiryTime,
+            String movieName, String theatreName, String screenName,
+            String showStartTime, String showEndTime, Double basePrice) {
         this.bookingId = bookingId;
         this.showId = showId;
         this.userId = userId;
@@ -22,6 +30,12 @@ public class BookingResponse {
         this.status = status;
         this.paymentStatus = paymentStatus;
         this.lockExpiryTime = lockExpiryTime;
+        this.movieName = movieName;
+        this.theatreName = theatreName;
+        this.screenName = screenName;
+        this.showStartTime = showStartTime;
+        this.showEndTime = showEndTime;
+        this.basePrice = basePrice;
     }
 
     public Long getBookingId() {
@@ -86,5 +100,53 @@ public class BookingResponse {
 
     public void setLockExpiryTime(String lockExpiryTime) {
         this.lockExpiryTime = lockExpiryTime;
+    }
+
+    public String getMovieName() {
+        return movieName;
+    }
+
+    public void setMovieName(String movieName) {
+        this.movieName = movieName;
+    }
+
+    public String getTheatreName() {
+        return theatreName;
+    }
+
+    public void setTheatreName(String theatreName) {
+        this.theatreName = theatreName;
+    }
+
+    public String getScreenName() {
+        return screenName;
+    }
+
+    public void setScreenName(String screenName) {
+        this.screenName = screenName;
+    }
+
+    public String getShowStartTime() {
+        return showStartTime;
+    }
+
+    public void setShowStartTime(String showStartTime) {
+        this.showStartTime = showStartTime;
+    }
+
+    public String getShowEndTime() {
+        return showEndTime;
+    }
+
+    public void setShowEndTime(String showEndTime) {
+        this.showEndTime = showEndTime;
+    }
+
+    public Double getBasePrice() {
+        return basePrice;
+    }
+
+    public void setBasePrice(Double basePrice) {
+        this.basePrice = basePrice;
     }
 }

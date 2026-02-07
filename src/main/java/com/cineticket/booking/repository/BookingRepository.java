@@ -21,4 +21,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatusAndLockExpiryTimeBefore(BookingStatus status, LocalDateTime time);
 
     void deleteByShow_Id(Long showId);
+
+    List<Booking> findByUserIdOrderByIdDesc(Long userId);
 }

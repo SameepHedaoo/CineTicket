@@ -15,6 +15,7 @@ import com.cineticket.show.Entity.Show;
 import com.cineticket.show.Repository.ShowRepository;
 import com.cineticket.show.Repository.ShowSeatRepository;
 import com.cineticket.booking.repository.BookingRepository;
+import com.cineticket.city.service.CityService;
 import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.auth.enums.Role;
 import com.cineticket.auth.repository.UserRepository;
@@ -38,6 +39,7 @@ public class TheatreService {
     private final ShowSeatRepository showSeatRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final CityService cityService;
 
     public TheatreService(TheatreRepository theatreRepository,
             ScreenRepository screenRepository,
@@ -45,7 +47,8 @@ public class TheatreService {
             ShowRepository showRepository,
             ShowSeatRepository showSeatRepository,
             BookingRepository bookingRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CityService cityService) {
         this.theatreRepository = theatreRepository;
         this.screenRepository = screenRepository;
         this.seatRepository = seatRepository;
@@ -53,6 +56,7 @@ public class TheatreService {
         this.showSeatRepository = showSeatRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
+        this.cityService = cityService;
     }
 
     public List<TheatreResponse> getTheatresByCity(String city) {
@@ -104,6 +108,7 @@ public class TheatreService {
         theatre.setName(request.getName());
         theatre.setCity(request.getCity());
         theatre.setAddress(request.getAddress());
+        cityService.ensureCityExists(request.getCity());
         Theatre saved = theatreRepository.save(theatre);
         return new TheatreResponse(
                 saved.getId(),

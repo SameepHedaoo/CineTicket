@@ -37,6 +37,27 @@ public final class BookingMapper {
                 .map(seat -> String.valueOf(seat.getSeat().getSeatNumber()))
                 .toList();
 
+        String movieName = booking.getShow() != null && booking.getShow().getMovie() != null
+                ? booking.getShow().getMovie().getTitle()
+                : null;
+        String theatreName = booking.getShow() != null
+                && booking.getShow().getScreen() != null
+                && booking.getShow().getScreen().getTheatre() != null
+                        ? booking.getShow().getScreen().getTheatre().getName()
+                        : null;
+        String screenName = booking.getShow() != null && booking.getShow().getScreen() != null
+                ? booking.getShow().getScreen().getScreenName()
+                : null;
+        String showStartTime = booking.getShow() != null && booking.getShow().getStartTime() != null
+                ? booking.getShow().getStartTime().toString()
+                : null;
+        String showEndTime = booking.getShow() != null && booking.getShow().getEndTime() != null
+                ? booking.getShow().getEndTime().toString()
+                : null;
+        Double basePrice = booking.getShow() != null && booking.getShow().getPrice() != null
+                ? booking.getShow().getPrice().doubleValue()
+                : null;
+
         return new BookingResponse(
                 booking.getId(),
                 booking.getShow() == null ? null : booking.getShow().getId(),
@@ -45,6 +66,12 @@ public final class BookingMapper {
                 totalPrice.doubleValue(),
                 booking.getStatus() == null ? null : booking.getStatus().name(),
                 booking.getPaymentStatus() == null ? null : booking.getPaymentStatus().name(),
-                booking.getLockExpiryTime() == null ? null : booking.getLockExpiryTime().toString());
+                booking.getLockExpiryTime() == null ? null : booking.getLockExpiryTime().toString(),
+                movieName,
+                theatreName,
+                screenName,
+                showStartTime,
+                showEndTime,
+                basePrice);
     }
 }

@@ -7,6 +7,7 @@ import SeatLayout from "./pages/SeatLayout";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Manager from "./pages/Manager";
+import MyBookings from "./pages/MyBookings";
 import "./App.css";
 
 const parseJwt = (token) => {
@@ -66,6 +67,11 @@ function App() {
             <NavLink to="/shows" className="nav-link">
               Shows
             </NavLink>
+            {token && (
+              <NavLink to="/my-bookings" className="nav-link">
+                My Bookings
+              </NavLink>
+            )}
             {role === "ADMIN" && (
               <NavLink to="/admin" className="nav-link">
                 Admin
@@ -94,6 +100,7 @@ function App() {
             <Route path="/theatres" element={<Theatres />} />
             <Route path="/shows" element={<Shows />} />
             <Route path="/shows/:showId/layout" element={<SeatLayout />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/manager" element={<Manager />} />

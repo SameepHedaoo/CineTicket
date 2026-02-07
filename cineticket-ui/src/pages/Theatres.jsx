@@ -1,13 +1,30 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/api";
 
-const CITIES = ["Pune", "Mumbai", "Bangalore"];
+const CITY_FALLBACK = [];
 
 function Theatres() {
-    const [city, setCity] = useState("Pune");
+    const [cities, setCities] = useState(CITY_FALLBACK);
+    const [city, setCity] = useState("");
     const [theatres, setTheatres] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        api.get("/cities")
+            .then((res) => {
+                const list = (res.data || []).map((item) => item.name).filter(Boolean);
+                setCities(list);
+                if (list.length > 0 && !list.includes(city)) {
+                    setCity(list[0]);
+                }
+            })
+            .catch(() => {
+                setCities(CITY_FALLBACK);
+            });
+    }, []);
 
     useEffect(() => {
         if (!city) {
@@ -37,7 +54,7 @@ function Theatres() {
                 </div>
                 <div className="filters">
                     <select value={city} onChange={(e) => setCity(e.target.value)}>
-                        {CITIES.map((item) => (
+                        {cities.map((item) => (
                             <option key={item} value={item}>
                                 {item}
                             </option>
@@ -55,6 +72,21 @@ function Theatres() {
                         <div className="card-title">{theatre.name}</div>
                         <div className="card-meta">{theatre.address}</div>
                         <div className="card-meta">{theatre.city}</div>
+                        <button
+                            className="primary"
+                            type="button"
+                            onClick={() =>
+                                navigate(
+                                    `/shows?theatreId=${encodeURIComponent(
+                                        theatre.id
+                                    )}&theatreName=${encodeURIComponent(
+                                        theatre.name || ""
+                                    )}&city=${encodeURIComponent(city)}`
+                                )
+                            }
+                        >
+                            Browse Shows
+                        </button>
                     </div>
                 ))}
             </div>

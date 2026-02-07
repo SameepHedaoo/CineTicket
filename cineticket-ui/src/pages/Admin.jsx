@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { adminApi, api } from "../api/api";
 
-const CITIES = ["Pune", "Mumbai", "Bangalore"];
+const CITY_FALLBACK = [];
 
 function Admin() {
     const [adminEmail, setAdminEmail] = useState("admin@example.com");
@@ -24,7 +24,7 @@ function Admin() {
 
     const [theatreForm, setTheatreForm] = useState({
         name: "Inox Mall",
-        city: "Pune",
+        city: "",
         address: "Main Road",
     });
 
@@ -44,22 +44,45 @@ function Admin() {
 
     const [theatres, setTheatres] = useState([]);
     const [movies, setMovies] = useState([]);
-    const [city, setCity] = useState("Pune");
+    const [cities, setCities] = useState(CITY_FALLBACK);
+    const [city, setCity] = useState("");
     const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
     const [adminToken, setAdminToken] = useState(localStorage.getItem("adminToken"));
+
+    const loadCities = () => {
+        api.get("/cities")
+            .then((res) => {
+                const list = (res.data || []).map((item) => item.name).filter(Boolean);
+                setCities(list);
+                if (list.length > 0 && !list.includes(city)) {
+                    setCity(list[0]);
+                }
+                if (list.length > 0) {
+                    setTheatreForm((prev) =>
+                        list.includes(prev.city) ? prev : { ...prev, city: list[0] }
+                    );
+                }
+            })
+            .catch(() => setCities(CITY_FALLBACK));
+    };
 
     const loadReferenceData = () => {
         api.get("/movies")
             .then((res) => setMovies(res.data || []))
             .catch(() => setMovies([]));
 
-        api.get(`/theatres?city=${encodeURIComponent(city)}`)
-            .then((res) => setTheatres(res.data || []))
-            .catch(() => setTheatres([]));
+        if (city) {
+            api.get(`/theatres?city=${encodeURIComponent(city)}`)
+                .then((res) => setTheatres(res.data || []))
+                .catch(() => setTheatres([]));
+        } else {
+            setTheatres([]);
+        }
     };
 
     useEffect(() => {
+        loadCities();
         loadReferenceData();
     }, [city]);
 
@@ -276,7 +299,7 @@ function Admin() {
                     <div className="field">
                         <span>Filter theatres by city</span>
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
-                            {CITIES.map((item) => (
+                            {cities.map((item) => (
                                 <option key={item} value={item}>
                                     {item}
                                 </option>
@@ -327,7 +350,7 @@ function Admin() {
                             value={theatreForm.city}
                             onChange={(e) => setTheatreForm({ ...theatreForm, city: e.target.value })}
                         >
-                            {CITIES.map((item) => (
+                            {cities.map((item) => (
                                 <option key={item} value={item}>
                                     {item}
                                 </option>
@@ -363,7 +386,7 @@ function Admin() {
                     <div className="field">
                         <span>Filter theatres by city</span>
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
-                            {CITIES.map((item) => (
+                            {cities.map((item) => (
                                 <option key={item} value={item}>
                                     {item}
                                 </option>
@@ -406,7 +429,7 @@ function Admin() {
                     <div className="field">
                         <span>Filter theatres by city</span>
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
-                            {CITIES.map((item) => (
+                            {cities.map((item) => (
                                 <option key={item} value={item}>
                                     {item}
                                 </option>
@@ -481,7 +504,7 @@ function Admin() {
                     <div className="field">
                         <span>Filter theatres by city</span>
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
-                            {CITIES.map((item) => (
+                            {cities.map((item) => (
                                 <option key={item} value={item}>
                                     {item}
                                 </option>

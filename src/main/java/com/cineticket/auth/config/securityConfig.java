@@ -32,7 +32,7 @@ public class securityConfig {
                         // Public auth endpoints
                         .requestMatchers("/auth/**", "/health").permitAll()
                         // Public read-only endpoints
-                        .requestMatchers(HttpMethod.GET, "/movies/**", "/theatres/**", "/shows/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/movies/**", "/theatres/**", "/shows/**", "/cities/**").permitAll()
                         // Manager + admin endpoints
                         .requestMatchers(HttpMethod.POST, "/admin/shows/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         .requestMatchers(HttpMethod.POST, "/admin/movies/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
