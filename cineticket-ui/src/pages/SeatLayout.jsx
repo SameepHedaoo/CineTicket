@@ -184,6 +184,19 @@ function SeatLayout() {
         });
     };
 
+    const loadRazorpayScript = () =>
+        new Promise((resolve) => {
+            if (window.Razorpay) {
+                resolve(true);
+                return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+
     const handleBook = async () => {
         if (!showId) {
             return;
@@ -211,19 +224,71 @@ function SeatLayout() {
                 throw new Error("Booking ID missing");
             }
 
-            const paymentResponse = await api.post("/payments/process", {
-                bookingId,
-                status: "PAID",
+            const pendingResponse = await api.post(`/bookings/${bookingId}/payment/initiate`);
+            setBooking(pendingResponse.data);
+
+            const ok = await loadRazorpayScript();
+            if (!ok) {
+                throw new Error("Razorpay SDK failed to load");
+            }
+
+            const amountPaise = Math.round(totalPrice * 100);
+            if (!amountPaise || amountPaise <= 0) {
+                throw new Error("Invalid amount for payment");
+            }
+
+            const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+            if (!keyId) {
+                throw new Error("Missing Razorpay key");
+            }
+
+            await new Promise((resolve, reject) => {
+                const options = {
+                    key: keyId,
+                    amount: amountPaise,
+                    currency: "INR",
+                    name: layout?.movieName || "CineTicket",
+                    description: `Booking ${bookingId}`,
+                    notes: {
+                        bookingId: String(bookingId),
+                        showId: String(showId),
+                    },
+                    handler: async () => {
+                        try {
+                            const confirmResponse = await api.post(
+                                `/bookings/${bookingId}/payment/confirm`
+                            );
+                            setBooking(confirmResponse.data);
+                            resolve(true);
+                        } catch (confirmErr) {
+                            reject(confirmErr);
+                        }
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            reject(new Error("Payment cancelled"));
+                        },
+                    },
+                    theme: {
+                        color: "#1d4ed8",
+                    },
+                };
+
+                const razorpay = new window.Razorpay(options);
+                razorpay.open();
             });
 
-            setBooking(paymentResponse.data);
         } catch (err) {
             if (err?.response?.status === 403) {
                 navigate(`/login?redirect=/shows/${showId}/layout`);
                 return;
             }
             console.error("Booking failed:", err);
-            setError("Booking failed. Please try again.");
+            setError(
+                err?.message === "Payment cancelled"
+                    ? "Payment cancelled."
+                    : "Booking failed. Please try again."
+            );
         } finally {
             setProcessing(false);
         }
