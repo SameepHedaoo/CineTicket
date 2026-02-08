@@ -1,104 +1,175 @@
-# 🎥 CineTicket — Movie Ticket Booking Microservices App
+# 🎬 CineTicket – Movie Ticket Booking System
 
-Welcome to **CineTicket** — a microservices‑based movie ticket booking backend built with Java and Spring Boot!  
-Think of this as the core engine that could power a movie booking platform like BookMyShow, Fandango, or that kiosk next to the popcorn machine 🍿
-
----
-
-## 🚀 What’s This?
-
-**CineTicket** is a backend system for managing:
-
-- 🎟️ User authentication (register & login)
-- 🎬 Movie listings
-- 🎭 Theatres & screens
-- 🪑 Seats
-- 🕰️ Show scheduling
-- 🧾 Booking tickets
-
-It’s designed as a structured set of Spring Boot modules that handle different parts of the movie booking domain.
----
-
-## 🧠 Features (aka “Why it’s cool!”)
-
-- 💡 User authentication with JWT
-- 📊 Admin & public APIs for movies
-- 🏛️ Theatre, screen, seat management
-- ⏰ Show scheduling and management
-- 🎫 Booking service with full create/read functionality
-- 📦 Clean layered architecture (controllers → services → repositories)
+CineTicket is a **BookMyShow‑like movie ticket booking platform** built with **Spring Boot (Microservices) + Oracle DB + React (Vite)**.
+The project focuses on **real‑world backend architecture**, payment integration, seat‑locking, and scalability.
 
 ---
 
-## 🧩 Repo Structure
+## 🚀 Features
 
-Here’s a quick look at how things are organized:
-src/main/java/com/cineticket/
-├── auth/ # Authentication (register/login)
-├── movie/ # Manage movie data
-├── theatre/ # Theatres + screens + seats
-├── show/ # Showtimes
-├── booking/ # Seat bookings
+### 🎥 Movie & Theatre Browsing
 
+* View **unique movies** in the Movies tab
+* View **theatre‑wise movies & shows** in the Theatres tab
+* Support for multiple shows per movie per theatre
 
-Each module uses Entities, Repositories, DTOs, Services, Controllers — the classic Spring Boot MVC pattern.
+### 🎟 Seat Booking System
+
+* Real‑time seat availability
+* **Seat locking** to prevent double booking
+* Booking lifecycle management (INITIATED → CONFIRMED → CANCELLED)
+
+### 💳 Payment Integration
+
+* **Razorpay Payment Gateway** integration
+* Order creation & payment verification
+* Booking confirmation only after successful payment
+* Handles page refresh during payment flow
+
+## 🛠 Tech Stack
+
+### Backend
+
+* Java 17+
+* Spring Boot 3
+* Spring Data JPA
+* Spring Security
+* Oracle Database
+* Razorpay SDK
+
+### Frontend
+
+* React
+* Vite
+* Axios
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗 Project Architecture
 
-- 🧪 Java 17
-- 🌱 Spring Boot
-- 📡 Spring Security (JWT)
-- 🗄️ JPA + any SQL database
-- 🛠️ Gradle build system
+```
+CineTicket
+│
+├── movie-service
+├── theatre-service
+├── show-service
+├── booking-service
+├── payment-service
+└── api-gateway (planned)
+```
+---
+
+## 💳 Payment Flow (Razorpay)
+
+1. User selects seats
+2. Backend locks seats
+3. Razorpay Order is created
+4. User completes payment
+5. Payment signature is verified
+6. Booking is confirmed
 
 ---
 
-## Postman Run Order
+## 📐 System Diagrams
 
-Run the collection in this order (top to bottom), and make sure the app is running:
-
-1. `GET /health` (sanity check)
-2. `Auth - Register User`
-3. `Auth - Login User`
-4. `Auth - Login Admin`
-5. Admin setup requests (movie → theatre → screen → show)
-6. User flow (shows → layout → booking → payment → confirm)
-
----
-
-## Sequence Diagram
+### 🔁 Booking & Payment Sequence Diagram
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User
-    participant Client
-    participant API as CineTicket API
-    participant DB as Database
+    participant U as User (UI)
+    participant UI as React UI
+    participant B as Booking Service
+    participant S as Show Service
+    participant P as Payment Service
+    participant R as Razorpay
 
-    User->>Client: Select movie, theatre, show
-    Client->>API: GET /shows?city=...
-    API->>DB: Fetch shows
-    DB-->>API: Shows
-    API-->>Client: Shows
+    U->>UI: Select movie, show & seats
+    UI->>S: Fetch seat availability
+    S-->>UI: Available seats
 
-    User->>Client: Choose seats
-    Client->>API: GET /shows/{showId}/seat-layout
-    API->>DB: Fetch seat layout
-    DB-->>API: Seats
-    API-->>Client: Seat layout
+    U->>UI: Click "Book Ticket"
+    UI->>B: Initiate booking (seat IDs)
+    B->>S: Lock selected seats
+    S-->>B: Seats locked
 
-    User->>Client: Finalize selection
-    Client->>API: POST /bookings/initiate (showId, showSeatIds)
-    API->>DB: Lock seats + create booking
-    DB-->>API: Booking (IN_PROGRESS)
-    API-->>Client: Booking + lockExpiryTime
+    B->>P: Create payment order
+    P->>R: Create Razorpay order
+    R-->>P: Order ID
+    P-->>UI: Razorpay order details
 
-    User->>Client: Confirm booking
-    Client->>API: POST /bookings/{bookingId}/confirm
-    API->>DB: Mark seats BOOKED + confirm booking
-    DB-->>API: Booking CONFIRMED
-    API-->>Client: Booking confirmed
+    U->>R: Complete payment
+    R-->>P: Payment callback (signature)
+    P->>P: Verify payment
+    P->>B: Payment success
+
+    B->>S: Confirm seats
+    B-->>UI: Booking confirmed
 ```
+
+---
+
+### 🏗 High-Level Architecture Diagram
+
+```mermaid
+flowchart LR
+    UI[React + Vite UI]
+
+    UI -->|REST APIs| Movie[Movie Module]
+    UI -->|REST APIs| Theatre[Theatre Module]
+    UI -->|REST APIs| Show[Show Module]
+    UI -->|REST APIs| Booking[Booking Module]
+    UI -->|REST APIs| Payment[Payment Module]
+
+    Movie --> DB[(Oracle DB)]
+    Theatre --> DB
+    Show --> DB
+    Booking --> DB
+    Payment --> DB
+
+    Payment -->|SDK| Razorpay[Razorpay Gateway]
+
+    subgraph Backend
+        Movie
+        Theatre
+        Show
+        Booking
+        Payment
+    end
+```
+
+---
+
+## ▶️ Running the Project
+
+### Backend
+
+```bash
+./gradlew bootRun
+```
+
+### Frontend
+
+```bash
+npm install
+npm run dev
+```
+
+
+## 📌 Future Enhancements
+
+* API Gateway
+* Redis caching
+* Movie poster CDN & preloading
+* Distributed seat locking
+* Production deployment (Docker + Cloud)
+
+---
+
+## 👨‍💻 Author
+
+**Sameep Hedaoo**
+Software Engineer | Java | Spring Boot | Microservices
+
+---
+
+> This project is built with a strong focus on **real‑world system design**, not just CRUD APIs.
