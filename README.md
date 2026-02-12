@@ -1,75 +1,133 @@
-# CineTicket - Movie Ticket Booking Web App
+# CineTicket - Movie Ticket Booking System
 
-CineTicket is a minimalist movie ticket booking app built with:
-- Backend: Spring Boot + Spring Security + JPA + Flyway + Oracle DB
-- Frontend: React (Vite) + Axios
+CineTicket is a movie ticket booking system built with Spring Boot and Oracle DB, with a React (Vite) client.
 
-The UX focuses on a clean flow from movie discovery to seat selection and booking.
+This repository is a modular Spring Boot application (modules/packages for auth, movies, theatres, shows, booking, payments), not independently deployed microservices.
 
-## Features
+## Tech Stack
 
-### Browsing and Discovery
-- Central city list (`/cities`) used across the UI.
-- Movies landing page shows 1 card per movie for the selected city, with lightweight metadata.
-- Shows page avoids redundancy:
-  - All-shows mode: 1 card per movie overview (theatre count, show count, min price, next showtime)
-  - Movie-selected mode: detailed show cards focused on theatre + price comparison
+Backend:
+- Java 17+
+- Spring Boot 3
+- Spring Security (JWT)
+- Spring Data JPA (Hibernate)
+- Flyway migrations
+- Oracle Database
 
-### Movie Detail Experience
-- Movie detail page: poster, big title, structured metadata (genre/duration/language/rating), synopsis
-- Show timings grouped by theatre, with quick "Select Seats" actions
+Frontend:
+- React
+- Vite
+- Axios
 
-### Seat Booking and Payments
-- Seat layout with clear states (available/selected/locked/booked) and a legend
-- Seat locking to avoid double booking
-- Razorpay checkout integration (when enabled)
+## Domain Model (High Level)
 
-### Ticket Expiry
-- Tickets automatically expire after show time (booking status becomes `EXPIRED`).
-- Expired tickets are shown in "My Bookings" and ticket download is disabled.
+Core entities:
+- `City`: centrally managed city list.
+- `Theatre` -> `Screen` -> `Seat`: theatre structure and seating layout.
+- `Movie`: movie metadata (title, language, duration, genre, rating, poster URL).
+- `Show`: movie + screen + start/end time + base price.
+- `ShowSeat`: per-show seat state (`AVAILABLE`, `LOCKED`, `BOOKED`).
+- `Booking`: user booking associated with a `Show` and a set of `ShowSeat`s.
 
-### Role-Based Dashboard
-- Single Login entrypoint
-- `/dashboard` auto-routes based on JWT role:
-  - `ADMIN` -> Admin console
-  - `THEATRE_MANAGER` -> Manager console
+Booking status lifecycle:
+- `IN_PROGRESS` during seat lock/payment initiation
+- `CONFIRMED` after successful payment and seat booking
+- `CANCELLED` when lock expires or user cancels
+- `EXPIRED` after the show time has passed (ticket no longer valid)
 
-## UI Routes (Frontend)
-- `/movies` : movies landing (city filter)
-- `/movies/:movieId` : movie detail (theatre-grouped showtimes)
-- `/shows` : shows browsing (city filter + overview)
-- `/shows/:showId/layout` : seat selection + booking
-- `/my-bookings` : user bookings + ticket downloads (disabled for expired)
-- `/dashboard` : role-based admin/manager console
+## Security Model
 
-## Poster Uploads (Local Default)
+JWT authentication:
+- API requests use `Authorization: Bearer <token>`.
+- Roles are represented as `ROLE_<ROLE>` authorities.
 
-Posters are stored locally by default and served from:
-- `GET /uploads/**`
+Roles:
+- `USER`: browse and book tickets.
+- `THEATRE_MANAGER`: manage movies (create/delete), upload/update posters, manage screens and shows for their theatre.
+- `ADMIN`: full admin console + assign theatre managers.
 
-The backend returns poster URLs like:
-- `/uploads/posters/<uuid>.<ext>`
+Notes:
+- `/bookings/**` and `/payments/**` require authentication.
+- Public GET endpoints include `/movies/**`, `/theatres/**`, `/shows/**`, `/cities/**`, `/uploads/**`.
 
-Optional GitHub storage can still be configured via env vars, but the backend will fall back to local storage if GitHub is not configured.
+## Poster Storage
 
-## Configuration
+Poster upload supports two storage modes:
 
-Backend env vars are documented in `.env.example`.
-Frontend env vars are documented in `cineticket-ui/.env.example`.
+1. Local (default):
+- Posters are written under `APP_UPLOAD_DIR/posters`.
+- Publicly served via `GET /uploads/**`.
+- URLs are stored as `/uploads/posters/<uuid>.<ext>`.
 
-Key backend vars:
-- `DB_USERNAME`, `DB_PASSWORD`
-- `JWT_SECRET`, `JWT_EXPIRATION`
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-- `APP_UPLOAD_DIR` (default `uploads`)
-- `APP_POSTER_STORAGE` (default `local`)
-- `RAZORPAY_ENABLED` (default `false`)
+2. GitHub (optional):
+- Uploads poster bytes to GitHub via the Contents API and returns a raw URL.
+- If GitHub is selected but credentials are not configured, the backend falls back to local storage.
 
-Key frontend vars:
-- `VITE_API_BASE_URL` (default `http://localhost:8080`)
-- `VITE_RAZORPAY_KEY_ID` (required only when Razorpay is enabled)
+Config keys:
+- `APP_POSTER_STORAGE=local|github`
+- `APP_UPLOAD_DIR=uploads`
+- `GITHUB_TOKEN`, `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`, `GITHUB_REPO_BRANCH`, `GITHUB_REPO_FOLDER`
 
-## Running Locally
+## Scheduling / Background Jobs
+
+Scheduling is enabled via `@EnableScheduling`.
+
+Background tasks:
+- Seat lock expiry: periodically finds `IN_PROGRESS` bookings past `lockExpiryTime`, releases seats, and cancels the booking.
+- Ticket expiry: periodically marks `CONFIRMED` + `PAID` bookings as `EXPIRED` after the show end time passes.
+
+Additionally, booking queries update status in-line so clients see up-to-date expiry without waiting for the scheduler tick.
+
+## Key API Endpoints (Overview)
+
+Auth:
+- `POST /auth/register`
+- `POST /auth/login`
+
+Cities:
+- `GET /cities`
+
+Movies:
+- `GET /movies` (distinct movies for browsing)
+- `GET /movies/all` (public DTO list)
+- `POST /movies/upload-poster` (multipart; authenticated)
+- `POST /movies/{movieId}/poster` (multipart; authenticated)
+- `DELETE /movies/{movieId}` (authenticated)
+
+Theatres:
+- `GET /theatres?city=<name>`
+- `GET /theatres/{id}`
+- `POST /theatres/add` (admin)
+- `POST /theatres/screens` (admin/manager)
+- `DELETE /theatres/screens/{screenId}` (admin/manager)
+
+Shows:
+- `GET /shows?city=<name>`
+- `GET /shows/theatre/{theatreId}`
+- `GET /shows/by-movie?movieId=<id>`
+- `GET /shows/{showId}/layout`
+- `POST /admin/shows/add` (admin/manager)
+
+Bookings:
+- `POST /bookings` (lock seats and create booking)
+- `POST /bookings/{bookingId}/payment/initiate`
+- `POST /bookings/{bookingId}/payment/confirm`
+- `POST /bookings/{bookingId}/confirm`
+- `POST /bookings/{bookingId}/cancel`
+- `GET /bookings/me`
+
+## Database Migrations (Flyway)
+
+Migrations live in `src/main/resources/db/migration`.
+
+Examples:
+- Initial schema: `V1__initial_schema.sql`
+- Movie poster URL: `V2__add_movie_poster_url.sql`
+- Booking enum constraint update (adds `EXPIRED`): `V3__booking_status_add_expired.sql`
+
+If you already have an existing Oracle schema, run the app once to apply migrations (or run Flyway via the app).
+
+## Local Development
 
 Backend:
 ```bash
@@ -83,6 +141,29 @@ npm install
 npm run dev
 ```
 
-## Notes
-- Flyway migrations live in `src/main/resources/db/migration`.
-- If you already have an existing DB, ensure migrations run (booking status now includes `EXPIRED`).
+Environment variables:
+- Backend: `.env.example`
+- Frontend: `cineticket-ui/.env.example`
+
+## Testing
+
+Backend tests:
+```bash
+./gradlew test
+```
+
+Frontend build:
+```bash
+cd cineticket-ui
+npm run build
+```
+
+## Troubleshooting
+
+ORA-02290 (check constraint violated) on booking status:
+- Your DB likely has an old CHECK constraint for the booking status enum.
+- Ensure Flyway migration `V3__booking_status_add_expired.sql` has run.
+
+403/401 on bookings:
+- `/bookings/**` requires a valid JWT.
+- Ensure the client is sending `Authorization: Bearer <token>`.
