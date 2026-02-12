@@ -1,175 +1,88 @@
-# 🎬 CineTicket – Movie Ticket Booking System
+# CineTicket - Movie Ticket Booking Web App
 
-CineTicket is a **BookMyShow‑like movie ticket booking platform** built with **Spring Boot (Microservices) + Oracle DB + React (Vite)**.
-The project focuses on **real‑world backend architecture**, payment integration, seat‑locking, and scalability.
+CineTicket is a minimalist movie ticket booking app built with:
+- Backend: Spring Boot + Spring Security + JPA + Flyway + Oracle DB
+- Frontend: React (Vite) + Axios
 
----
+The UX focuses on a clean flow from movie discovery to seat selection and booking.
 
-## 🚀 Features
+## Features
 
-### 🎥 Movie & Theatre Browsing
+### Browsing and Discovery
+- Central city list (`/cities`) used across the UI.
+- Movies landing page shows 1 card per movie for the selected city, with lightweight metadata.
+- Shows page avoids redundancy:
+  - All-shows mode: 1 card per movie overview (theatre count, show count, min price, next showtime)
+  - Movie-selected mode: detailed show cards focused on theatre + price comparison
 
-* View **unique movies** in the Movies tab
-* View **theatre‑wise movies & shows** in the Theatres tab
-* Support for multiple shows per movie per theatre
+### Movie Detail Experience
+- Movie detail page: poster, big title, structured metadata (genre/duration/language/rating), synopsis
+- Show timings grouped by theatre, with quick "Select Seats" actions
 
-### 🎟 Seat Booking System
+### Seat Booking and Payments
+- Seat layout with clear states (available/selected/locked/booked) and a legend
+- Seat locking to avoid double booking
+- Razorpay checkout integration (when enabled)
 
-* Real‑time seat availability
-* **Seat locking** to prevent double booking
-* Booking lifecycle management (INITIATED → CONFIRMED → CANCELLED)
+### Ticket Expiry
+- Tickets automatically expire after show time (booking status becomes `EXPIRED`).
+- Expired tickets are shown in "My Bookings" and ticket download is disabled.
 
-### 💳 Payment Integration
+### Role-Based Dashboard
+- Single Login entrypoint
+- `/dashboard` auto-routes based on JWT role:
+  - `ADMIN` -> Admin console
+  - `THEATRE_MANAGER` -> Manager console
 
-* **Razorpay Payment Gateway** integration
-* Order creation & payment verification
-* Booking confirmation only after successful payment
-* Handles page refresh during payment flow
+## UI Routes (Frontend)
+- `/movies` : movies landing (city filter)
+- `/movies/:movieId` : movie detail (theatre-grouped showtimes)
+- `/shows` : shows browsing (city filter + overview)
+- `/shows/:showId/layout` : seat selection + booking
+- `/my-bookings` : user bookings + ticket downloads (disabled for expired)
+- `/dashboard` : role-based admin/manager console
 
-## 🛠 Tech Stack
+## Poster Uploads (Local Default)
 
-### Backend
+Posters are stored locally by default and served from:
+- `GET /uploads/**`
 
-* Java 17+
-* Spring Boot 3
-* Spring Data JPA
-* Spring Security
-* Oracle Database
-* Razorpay SDK
+The backend returns poster URLs like:
+- `/uploads/posters/<uuid>.<ext>`
 
-### Frontend
+Optional GitHub storage can still be configured via env vars, but the backend will fall back to local storage if GitHub is not configured.
 
-* React
-* Vite
-* Axios
+## Configuration
 
----
+Backend env vars are documented in `.env.example`.
+Frontend env vars are documented in `cineticket-ui/.env.example`.
 
-## 🏗 Project Architecture
+Key backend vars:
+- `DB_USERNAME`, `DB_PASSWORD`
+- `JWT_SECRET`, `JWT_EXPIRATION`
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+- `APP_UPLOAD_DIR` (default `uploads`)
+- `APP_POSTER_STORAGE` (default `local`)
+- `RAZORPAY_ENABLED` (default `false`)
 
-```
-CineTicket
-│
-├── movie-service
-├── theatre-service
-├── show-service
-├── booking-service
-├── payment-service
-└── api-gateway (planned)
-```
----
+Key frontend vars:
+- `VITE_API_BASE_URL` (default `http://localhost:8080`)
+- `VITE_RAZORPAY_KEY_ID` (required only when Razorpay is enabled)
 
-## 💳 Payment Flow (Razorpay)
+## Running Locally
 
-1. User selects seats
-2. Backend locks seats
-3. Razorpay Order is created
-4. User completes payment
-5. Payment signature is verified
-6. Booking is confirmed
-
----
-
-## 📐 System Diagrams
-
-### 🔁 Booking & Payment Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant U as User (UI)
-    participant UI as React UI
-    participant B as Booking Service
-    participant S as Show Service
-    participant P as Payment Service
-    participant R as Razorpay
-
-    U->>UI: Select movie, show & seats
-    UI->>S: Fetch seat availability
-    S-->>UI: Available seats
-
-    U->>UI: Click "Book Ticket"
-    UI->>B: Initiate booking (seat IDs)
-    B->>S: Lock selected seats
-    S-->>B: Seats locked
-
-    B->>P: Create payment order
-    P->>R: Create Razorpay order
-    R-->>P: Order ID
-    P-->>UI: Razorpay order details
-
-    U->>R: Complete payment
-    R-->>P: Payment callback (signature)
-    P->>P: Verify payment
-    P->>B: Payment success
-
-    B->>S: Confirm seats
-    B-->>UI: Booking confirmed
-```
-
----
-
-### 🏗 High-Level Architecture Diagram
-
-```mermaid
-flowchart LR
-    UI[React + Vite UI]
-
-    UI -->|REST APIs| Movie[Movie Module]
-    UI -->|REST APIs| Theatre[Theatre Module]
-    UI -->|REST APIs| Show[Show Module]
-    UI -->|REST APIs| Booking[Booking Module]
-    UI -->|REST APIs| Payment[Payment Module]
-
-    Movie --> DB[(Oracle DB)]
-    Theatre --> DB
-    Show --> DB
-    Booking --> DB
-    Payment --> DB
-
-    Payment -->|SDK| Razorpay[Razorpay Gateway]
-
-    subgraph Backend
-        Movie
-        Theatre
-        Show
-        Booking
-        Payment
-    end
-```
-
----
-
-## ▶️ Running the Project
-
-### Backend
-
+Backend:
 ```bash
 ./gradlew bootRun
 ```
 
-### Frontend
-
+Frontend:
 ```bash
+cd cineticket-ui
 npm install
 npm run dev
 ```
 
-
-## 📌 Future Enhancements
-
-* API Gateway
-* Redis caching
-* Movie poster CDN & preloading
-* Distributed seat locking
-* Production deployment (Docker + Cloud)
-
----
-
-## 👨‍💻 Author
-
-**Sameep Hedaoo**
-Software Engineer | Java | Spring Boot | Microservices
-
----
-
-> This project is built with a strong focus on **real‑world system design**, not just CRUD APIs.
+## Notes
+- Flyway migrations live in `src/main/resources/db/migration`.
+- If you already have an existing DB, ensure migrations run (booking status now includes `EXPIRED`).
