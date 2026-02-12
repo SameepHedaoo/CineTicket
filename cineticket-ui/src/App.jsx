@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Manager from "./pages/Manager";
 import MyBookings from "./pages/MyBookings";
+import { notifySuccess } from "./ui/notificationBus";
 import "./App.css";
 
 const parseJwt = (token) => {
@@ -50,6 +51,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.dispatchEvent(new Event("auth-changed"));
+    notifySuccess("Logged out successfully.");
   };
 
   return (

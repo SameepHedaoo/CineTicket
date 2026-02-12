@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/api";
 import QRCode from "qrcode";
 import { jsPDF } from "jspdf";
+import { notifySuccess } from "../ui/notificationBus";
 
 function MyBookings() {
     const navigate = useNavigate();
@@ -66,6 +67,7 @@ function MyBookings() {
             link.href = qrDataUrl;
             link.download = `ticket-${booking.bookingId}.png`;
             link.click();
+            notifySuccess(`QR downloaded for booking #${booking.bookingId}.`);
         } finally {
             setDownloadingId(null);
         }
@@ -98,6 +100,7 @@ function MyBookings() {
             doc.text("Scan QR for verification", 40, y + 20);
             doc.addImage(qrDataUrl, "PNG", 40, y + 40, 160, 160);
             doc.save(`ticket-${booking.bookingId}.pdf`);
+            notifySuccess(`Ticket PDF downloaded for booking #${booking.bookingId}.`);
         } finally {
             setDownloadingId(null);
         }
