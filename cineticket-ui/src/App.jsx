@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Movies from "./pages/Movies";
+import MovieDetail from "./pages/MovieDetail";
 import Theatres from "./pages/Theatres";
 import Shows from "./pages/Shows";
 import SeatLayout from "./pages/SeatLayout";
@@ -107,6 +108,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Movies />} />
             <Route path="/movies" element={<Movies />} />
+            <Route path="/movies/:movieId" element={<MovieDetail />} />
             <Route path="/theatres" element={<Theatres />} />
             <Route path="/shows" element={<Shows />} />
             <Route path="/shows/:showId/layout" element={<SeatLayout />} />

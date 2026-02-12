@@ -129,6 +129,11 @@ textarea {
   line-height: 1.2;
 }
 
+.hero-title {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  letter-spacing: -0.01em;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -206,6 +211,98 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.detail-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #eef2f7;
+  object-fit: cover;
+}
+
+.detail-card {
+  box-shadow: none;
+}
+
+.detail-synopsis {
+  white-space: pre-wrap;
+}
+
+.theatre-groups {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.theatre-group {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.theatre-group:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.theatre-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.showtime-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.showtime-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.showtime-chip:hover {
+  background: var(--surface-soft);
+  border-color: #d1d5db;
+}
+
+.showtime-time {
+  font-weight: 800;
+}
+
+.showtime-price {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.select-seats-cta {
+  margin-top: 12px;
 }
 
 .card {
@@ -288,6 +385,30 @@ textarea {
   color: var(--text-muted);
   font-size: 0.92rem;
   line-height: 1.35;
+}
+
+.show-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.show-theatre {
+  font-weight: 800;
+  font-size: 1.02rem;
+  color: var(--text);
+}
+
+.show-price {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  white-space: nowrap;
 }
 
 .badge {
@@ -712,6 +833,24 @@ textarea {
 
   .summary-card {
     position: static;
+  }
+
+  .seat-layout {
+    padding-bottom: 220px;
+  }
+
+  .summary-card {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    z-index: 1000;
+    border-radius: 14px;
+  }
+
+  .detail-layout {
+    grid-template-columns: 1fr;
   }
 }
 

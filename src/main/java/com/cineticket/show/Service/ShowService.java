@@ -171,11 +171,17 @@ public class ShowService {
                 ? 0
                 : Math.toIntExact(showSeatRepository.countByShowIdAndStatus(showId, ShowSeatStatus.AVAILABLE));
 
+        String theatreName = show.getScreen() != null
+                && show.getScreen().getTheatre() != null
+                        ? show.getScreen().getTheatre().getName()
+                        : null;
+
         return new ShowResponse(
                 showId,
                 show.getMovie().getId(),
                 show.getMovie().getTitle(),
                 show.getMovie().getPosterUrl(),
+                theatreName,
                 show.getScreen().getScreenName(),
                 show.getStartTime(),
                 show.getPrice(),

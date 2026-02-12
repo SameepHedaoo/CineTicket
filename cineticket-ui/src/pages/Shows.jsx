@@ -83,15 +83,19 @@ function Shows() {
         let request;
         if (theatreId) {
             request = api.get(`/shows/theatre/${encodeURIComponent(theatreId)}`);
-        } else if (movieId) {
-            request = api.get(`/shows/by-movie?movieId=${encodeURIComponent(movieId)}`);
         } else {
             request = api.get(`/shows?city=${encodeURIComponent(city)}`);
         }
 
         request
             .then((res) => {
-                setShows(res.data || []);
+                const list = res.data || [];
+                // If we have a movieId and we're browsing by city, filter client-side so the city context is respected.
+                if (movieId) {
+                    setShows(list.filter((item) => String(item.movieId) === String(movieId)));
+                } else {
+                    setShows(list);
+                }
             })
             .catch((err) => {
                 console.error("Failed to fetch shows:", err);
@@ -174,20 +178,91 @@ function Shows() {
         return next;
     }, [shows, movieFilter, dateFilter, priceBucket]);
     const isSpecificMovieView = Boolean(movieId || movieFilter);
+    const isAllShowsOverview = !theatreId && !isSpecificMovieView;
+
+    const overviewMovies = useMemo(() => {
+        if (!isAllShowsOverview) {
+            return [];
+        }
+        const map = new Map();
+        for (const show of filteredShows || []) {
+            const name = String(show.movieName || "").trim();
+            if (!name) {
+                continue;
+            }
+            const key = show.movieId !== null && show.movieId !== undefined ? `id:${show.movieId}` : `name:${name.toLowerCase()}`;
+            const existing = map.get(key) || {
+                movieId: show.movieId ?? null,
+                movieName: name,
+                posterUrl: show.moviePosterUrl || null,
+                showCount: 0,
+                theatres: new Set(),
+                minPrice: null,
+                nextStartTime: null,
+            };
+
+            existing.showCount += 1;
+            if (show.theatreName) {
+                existing.theatres.add(String(show.theatreName));
+            }
+
+            const price = show.price !== null && show.price !== undefined ? Number(show.price) : null;
+            if (price !== null && !Number.isNaN(price)) {
+                existing.minPrice = existing.minPrice === null ? price : Math.min(existing.minPrice, price);
+            }
+
+            if (show.startTime) {
+                const start = new Date(show.startTime).getTime();
+                if (!Number.isNaN(start)) {
+                    existing.nextStartTime = existing.nextStartTime === null ? start : Math.min(existing.nextStartTime, start);
+                }
+            }
+
+            if (!existing.posterUrl && show.moviePosterUrl) {
+                existing.posterUrl = show.moviePosterUrl;
+            }
+
+            map.set(key, existing);
+        }
+
+        return Array.from(map.values())
+            .map((item) => ({ ...item, theatreCount: item.theatres.size }))
+            .sort((a, b) => a.movieName.localeCompare(b.movieName));
+    }, [filteredShows, isAllShowsOverview]);
+    const selectedMovieTitle = useMemo(() => {
+        if (movieFilter) {
+            return movieFilter;
+        }
+        const fromQuery = (searchParams.get("movie") || "").trim();
+        if (fromQuery) {
+            return fromQuery;
+        }
+        if (movieId) {
+            const candidate = (shows?.[0]?.movieName || "").trim();
+            if (candidate) {
+                return candidate;
+            }
+        }
+        return "";
+    }, [movieFilter, movieId, shows, searchParams]);
 
     return (
         <div className="page">
             <div className="page-header">
                 <div>
-                    <h2>Shows</h2>
+                    <h2 className={isSpecificMovieView ? "hero-title" : ""}>
+                        {isSpecificMovieView ? selectedMovieTitle || "Shows" : "Shows"}
+                    </h2>
                     <p className="subtle">
                         {theatreId
                             ? `Showing shows for ${theatreName || "selected theatre"}.`
-                            : "Browse shows by city and optionally filter by movie, date, and price."}
+                            : isSpecificMovieView
+                                ? "Compare theatres and prices, then pick a showtime."
+                                : "Browse shows by city and optionally filter by movie, date, and price."}
                     </p>
                 </div>
                 <div className="filters">
-                    {!theatreId && !movieId && (
+                    {!theatreId && (
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
                             {cities.map((item) => (
                                 <option key={item} value={item}>
@@ -258,63 +333,112 @@ function Shows() {
             )}
 
             <div className="card-grid">
-                {filteredShows.map((show) => (
-                    <div key={show.showId} className="card">
-                        {show.moviePosterUrl && (() => {
-                            const posterUrl = show.moviePosterUrl.startsWith("http")
-                                ? show.moviePosterUrl
-                                : `${API_BASE_URL}${show.moviePosterUrl}`;
-                            if (isSpecificMovieView) {
+                {isAllShowsOverview
+                    ? overviewMovies.map((movie) => {
+                        const posterUrl = movie.posterUrl
+                            ? (movie.posterUrl.startsWith("http") ? movie.posterUrl : `${API_BASE_URL}${movie.posterUrl}`)
+                            : null;
+                        return (
+                            <div
+                                key={movie.movieId ?? movie.movieName}
+                                className="card clickable"
+                                onClick={() => setMovieFilter(movie.movieName)}
+                            >
+                                {posterUrl && (
+                                    <img
+                                        className="movie-poster"
+                                        src={posterUrl}
+                                        alt={`${movie.movieName} poster`}
+                                        loading="lazy"
+                                    />
+                                )}
+                                <div className="card-title">{movie.movieName}</div>
+                                <div className="card-meta">
+                                    {movie.theatreCount} theatre{movie.theatreCount === 1 ? "" : "s"} • {movie.showCount} show{movie.showCount === 1 ? "" : "s"}
+                                </div>
+                                <div className="card-meta">
+                                    {movie.minPrice !== null ? `From INR ${movie.minPrice}` : "Price TBD"}
+                                    {movie.nextStartTime !== null
+                                        ? ` • Next ${new Date(movie.nextStartTime).toLocaleString()}`
+                                        : ""}
+                                </div>
+                                <button className="primary" type="button" onClick={(e) => { e.stopPropagation(); setMovieFilter(movie.movieName); }}>
+                                    See Showtimes
+                                </button>
+                            </div>
+                        );
+                    })
+                    : filteredShows.map((show) => (
+                        <div key={show.showId} className="card">
+                            {show.moviePosterUrl && (() => {
+                                const posterUrl = show.moviePosterUrl.startsWith("http")
+                                    ? show.moviePosterUrl
+                                    : `${API_BASE_URL}${show.moviePosterUrl}`;
+                                if (isSpecificMovieView) {
+                                    return (
+                                        <div className="poster-cover">
+                                            <div
+                                                className="poster-cover-bg"
+                                                style={{ backgroundImage: `url(${posterUrl})` }}
+                                            />
+                                        </div>
+                                    );
+                                }
                                 return (
-                                    <div className="poster-cover">
-                                        <div
-                                            className="poster-cover-bg"
-                                            style={{ backgroundImage: `url(${posterUrl})` }}
-                                        />
-                                    </div>
+                                    <img
+                                        className="movie-poster"
+                                        src={posterUrl}
+                                        alt={`${show.movieName || "Movie"} poster`}
+                                        loading="lazy"
+                                    />
                                 );
-                            }
-                            return (
-                                <img
-                                    className="movie-poster"
-                                    src={posterUrl}
-                                    alt={`${show.movieName || "Movie"} poster`}
-                                    loading="lazy"
-                                />
-                            );
-                        })()}
-                        <div className="card-title">{show.movieName}</div>
-                        <div className="card-meta">{show.screenName}</div>
-                        <div className="card-meta">
-                            Start: {show.startTime ? new Date(show.startTime).toLocaleString() : "TBD"}
-                        </div>
-                        <div className="card-meta">
-                            Base price: {show.price !== null && show.price !== undefined ? `₹${show.price}` : "TBD"}
-                        </div>
-                        <div className="card-meta">
-                            Available seats: {show.availableSeats ?? "TBD"}{" "}
-                            {show.totalSeats
-                                ? `/ ${show.totalSeats}`
-                                : ""}
-                        </div>
-                        {show.totalSeats &&
-                            show.availableSeats !== null &&
-                            show.availableSeats !== undefined &&
-                            show.totalSeats > 0 &&
-                            show.availableSeats / show.totalSeats <= 0.2 && (
-                                <div className="badge badge-warning">Almost booked</div>
+                            })()}
+                            {isSpecificMovieView ? (
+                                <div className="show-card-header">
+                                    <div className="show-theatre">{show.theatreName || "Theatre"}</div>
+                                    <div className="show-price">
+                                        {show.price !== null && show.price !== undefined ? `Rs ${show.price}` : "TBD"}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="card-title">{show.movieName}</div>
                             )}
-                        <button
-                            className="primary"
-                            onClick={() => navigate(`/shows/${show.showId}/layout`)}
-                        >
-                            View Seat Layout
-                        </button>
-                    </div>
-                ))}
+                            <div className="card-meta">
+                                {(show.theatreName ? `${show.theatreName} - ` : "")}{show.screenName}
+                            </div>
+                            <div className="card-meta">
+                                Start: {show.startTime ? new Date(show.startTime).toLocaleString() : "TBD"}
+                            </div>
+                            {!isSpecificMovieView && (
+                                <div className="card-meta">
+                                    Base price: {show.price !== null && show.price !== undefined ? `INR ${show.price}` : "TBD"}
+                                </div>
+                            )}
+                            <div className="card-meta">
+                                Available seats: {show.availableSeats ?? "TBD"}{" "}
+                                {show.totalSeats
+                                    ? `/ ${show.totalSeats}`
+                                    : ""}
+                            </div>
+                            {show.totalSeats &&
+                                show.availableSeats !== null &&
+                                show.availableSeats !== undefined &&
+                                show.totalSeats > 0 &&
+                                show.availableSeats / show.totalSeats <= 0.2 && (
+                                    <div className="badge badge-warning">Almost booked</div>
+                                )}
+                            <button
+                                className="primary"
+                                onClick={() => navigate(`/shows/${show.showId}/layout`)}
+                            >
+                                View Seat Layout
+                            </button>
+                        </div>
+                    ))}
             </div>
         </div>
     );
 }
 
 export default Shows;
+
