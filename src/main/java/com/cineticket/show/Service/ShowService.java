@@ -150,6 +150,15 @@ public class ShowService {
         return response;
     }
 
+    public List<ShowResponse> getShowsByMovie(Long movieId) {
+        List<Show> shows = showRepository.findByMovieId(movieId);
+        List<ShowResponse> response = new ArrayList<>();
+        for (Show show : shows) {
+            response.add(mapToShowResponse(show));
+        }
+        return response;
+    }
+
     public Show getShowById(Long showId) {
         return showRepository.findById(showId)
                 .orElseThrow(() -> new RuntimeException("Show not found"));
@@ -164,6 +173,7 @@ public class ShowService {
 
         return new ShowResponse(
                 showId,
+                show.getMovie().getId(),
                 show.getMovie().getTitle(),
                 show.getMovie().getPosterUrl(),
                 show.getScreen().getScreenName(),

@@ -11,6 +11,8 @@ import com.cineticket.auth.entity.UserEntity;
 import com.cineticket.auth.enums.Role;
 import com.cineticket.auth.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -42,10 +44,10 @@ public class AuthService {
         UserEntity user = userRepository.findByEmail(request.getEmail());
 
         if (user == null) {
-            return new AuthResponse("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return new AuthResponse("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
         String token = jwtUtil.generateToken(

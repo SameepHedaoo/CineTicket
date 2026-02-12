@@ -279,7 +279,7 @@ function SeatLayout() {
             });
 
         } catch (err) {
-            if (err?.response?.status === 403) {
+            if (err?.response?.status === 401 || err?.response?.status === 403) {
                 navigate(`/login?redirect=/shows/${showId}/layout`);
                 return;
             }

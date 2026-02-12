@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Movies from "./pages/Movies";
 import Theatres from "./pages/Theatres";
@@ -54,6 +54,19 @@ function App() {
     notifySuccess("Logged out successfully.");
   };
 
+  const dashboardElement = () => {
+    if (!token) {
+      return <Navigate to="/login?redirect=/dashboard" replace />;
+    }
+    if (role === "ADMIN") {
+      return <Admin />;
+    }
+    if (role === "THEATRE_MANAGER") {
+      return <Manager />;
+    }
+    return <Navigate to="/movies" replace />;
+  };
+
   return (
     <BrowserRouter>
       <div className="app-shell">
@@ -74,14 +87,9 @@ function App() {
                 My Bookings
               </NavLink>
             )}
-            {role === "ADMIN" && (
-              <NavLink to="/admin" className="nav-link">
-                Admin
-              </NavLink>
-            )}
-            {role === "THEATRE_MANAGER" && (
-              <NavLink to="/manager" className="nav-link">
-                Manager
+            {token && role && role !== "USER" && (
+              <NavLink to="/dashboard" className="nav-link">
+                Dashboard
               </NavLink>
             )}
             {token ? (
@@ -89,7 +97,7 @@ function App() {
                 Logout
               </button>
             ) : (
-              <NavLink to="/login" className="nav-link">
+              <NavLink to="/login" className="nav-link nav-cta">
                 Login
               </NavLink>
             )}
@@ -104,6 +112,7 @@ function App() {
             <Route path="/shows/:showId/layout" element={<SeatLayout />} />
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/login" element={<Auth />} />
+            <Route path="/dashboard" element={dashboardElement()} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/manager" element={<Manager />} />
           </Routes>

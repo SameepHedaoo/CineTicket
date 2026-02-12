@@ -2,6 +2,25 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/api";
 
+const parseJwt = (token) => {
+    if (!token) {
+        return null;
+    }
+    try {
+        const payload = token.split(".")[1];
+        const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split("")
+                .map((c) => `%${("00" + c.charCodeAt(0).toString(16)).slice(-2)}`)
+                .join("")
+        );
+        return JSON.parse(jsonPayload);
+    } catch (err) {
+        return null;
+    }
+};
+
 function Auth() {
     const [mode, setMode] = useState("login");
     const [email, setEmail] = useState("user@example.com");
@@ -11,7 +30,7 @@ function Auth() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const redirectTo = searchParams.get("redirect") || "/shows";
+    const requestedRedirect = searchParams.get("redirect");
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -33,7 +52,16 @@ function Auth() {
                     }
                     localStorage.setItem("token", token);
                     window.dispatchEvent(new Event("auth-changed"));
-                    navigate(redirectTo);
+                    const role = parseJwt(token)?.role;
+                    if (requestedRedirect) {
+                        navigate(requestedRedirect);
+                        return;
+                    }
+                    if (role === "ADMIN" || role === "THEATRE_MANAGER") {
+                        navigate("/dashboard");
+                        return;
+                    }
+                    navigate("/movies");
                 } else {
                     setMessage(res.data?.message || "Registration successful. Please login.");
                     setMode("login");
@@ -41,7 +69,9 @@ function Auth() {
             })
             .catch((err) => {
                 console.error("Auth failed:", err);
-                setError("Authentication failed");
+                const statusCode = err?.response?.status;
+                const message = err?.response?.data?.message || err?.message || "Authentication failed";
+                setError(statusCode ? `Authentication failed (${statusCode}). ${message}` : message);
             })
             .finally(() => setLoading(false));
     };

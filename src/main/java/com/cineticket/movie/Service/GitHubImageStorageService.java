@@ -8,10 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class GitHubImageStorageService {
@@ -66,11 +69,22 @@ public class GitHubImageStorageService {
         headers.set("X-GitHub-Api-Version", "2022-11-28");
         headers.set(HttpHeaders.USER_AGENT, "CineTicket");
 
-        ResponseEntity<Map> response = restTemplate.exchange(
-                url,
-                HttpMethod.PUT,
-                new HttpEntity<>(body, headers),
-                Map.class);
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, headers),
+                    Map.class);
+        } catch (HttpClientErrorException.Forbidden ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GitHub rejected poster upload (403). Check token permissions and repo access.");
+        } catch (HttpClientErrorException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GitHub rejected poster upload: " + ex.getStatusCode().value());
+        }
 
         Map responseBody = response.getBody();
         if (responseBody != null) {

@@ -28,6 +28,28 @@ public class BookingService {
         this.showSeatService = showSeatService;
     }
 
+    private void expireIfPastShow(Booking booking, LocalDateTime now) {
+        if (booking == null) {
+            return;
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            return;
+        }
+        if (booking.getPaymentStatus() != PaymentStatus.PAID) {
+            return;
+        }
+        if (booking.getShow() == null) {
+            return;
+        }
+        LocalDateTime end = booking.getShow().getEndTime();
+        if (end == null) {
+            end = booking.getShow().getStartTime();
+        }
+        if (end != null && end.isBefore(now)) {
+            booking.setStatus(BookingStatus.EXPIRED);
+        }
+    }
+
     @Transactional
     public BookingResponse lockSeats(LockSeatsRequest request, Long userId) {
         List<ShowSeat> seats = showSeatService.lockSeats(
@@ -51,8 +73,14 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow();
 
+        expireIfPastShow(booking, LocalDateTime.now());
+
         if (booking.getStatus() == BookingStatus.CONFIRMED) {
             return BookingMapper.toBookingResponse(booking);
+        }
+
+        if (booking.getStatus() == BookingStatus.EXPIRED) {
+            throw new RuntimeException("Ticket expired");
         }
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
@@ -85,8 +113,14 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow();
 
+        expireIfPastShow(booking, LocalDateTime.now());
+
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             return BookingMapper.toBookingResponse(booking);
+        }
+
+        if (booking.getStatus() == BookingStatus.EXPIRED) {
+            throw new RuntimeException("Ticket expired. Cancellation is not allowed.");
         }
 
         showSeatService.releaseSeats(booking.getShowSeats());
@@ -96,14 +130,21 @@ public class BookingService {
         return BookingMapper.toBookingResponse(booking);
     }
 
+    @Transactional
     public BookingResponse getBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow();
+        expireIfPastShow(booking, LocalDateTime.now());
         return BookingMapper.toBookingResponse(booking);
     }
 
+    @Transactional
     public List<BookingResponse> getBookingsForUser(Long userId) {
         List<Booking> bookings = bookingRepository.findByUserIdOrderByIdDesc(userId);
+        LocalDateTime now = LocalDateTime.now();
+        for (Booking booking : bookings) {
+            expireIfPastShow(booking, now);
+        }
         return bookings.stream()
                 .map(BookingMapper::toBookingResponse)
                 .toList();
@@ -155,6 +196,20 @@ public class BookingService {
             showSeatService.releaseSeats(booking.getShowSeats());
             booking.setStatus(BookingStatus.CANCELLED);
             booking.setPaymentStatus(PaymentStatus.FAILED);
+        }
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    @Transactional
+    public void expirePastShowTickets() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> candidates = bookingRepository.findByStatusAndPaymentStatusAndShow_EndTimeBefore(
+                BookingStatus.CONFIRMED,
+                PaymentStatus.PAID,
+                now);
+
+        for (Booking booking : candidates) {
+            booking.setStatus(BookingStatus.EXPIRED);
         }
     }
 }

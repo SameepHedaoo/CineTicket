@@ -11,7 +11,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -28,14 +36,29 @@ public class securityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // disable CSRF
+                .cors(cors -> {})
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("Unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("Forbidden");
+                        }))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public auth endpoints
                         .requestMatchers("/auth/**", "/health").permitAll()
                         // Public read-only endpoints
-                        .requestMatchers(HttpMethod.GET, "/movies/**", "/theatres/**", "/shows/**", "/cities/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/movies/**", "/theatres/**", "/shows/**", "/cities/**", "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/movies/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/movies/**").authenticated()
                         // Manager + admin endpoints
+                        .requestMatchers(HttpMethod.POST, "/admin/movies/*/poster").hasAnyRole("ADMIN", "THEATRE_MANAGER")
+                        .requestMatchers("/admin/movies/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         .requestMatchers(HttpMethod.POST, "/admin/shows/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/admin/movies/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/admin/shows/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         .requestMatchers(HttpMethod.POST, "/theatres/screens").hasAnyRole("ADMIN", "THEATRE_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/theatres/screens/**").hasAnyRole("ADMIN", "THEATRE_MANAGER")
@@ -61,5 +84,17 @@ public class securityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

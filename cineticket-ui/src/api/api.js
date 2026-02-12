@@ -42,7 +42,16 @@ const attachSuccessToastInterceptor = (client) => {
             }
             return response;
         },
-        (error) => Promise.reject(error)
+        (error) => {
+            const status = error?.response?.status;
+            // If JWT is missing/expired, force re-auth.
+            if (status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("adminToken");
+                window.dispatchEvent(new Event("auth-changed"));
+            }
+            return Promise.reject(error);
+        }
     );
 };
 

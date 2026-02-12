@@ -24,6 +24,7 @@ function Shows() {
     const [city, setCity] = useState(searchParams.get("city") || "");
     const [theatreId, setTheatreId] = useState(searchParams.get("theatreId") || "");
     const [theatreName, setTheatreName] = useState(searchParams.get("theatreName") || "");
+    const [movieId, setMovieId] = useState(searchParams.get("movieId") || "");
     const [movieFilter, setMovieFilter] = useState(searchParams.get("movie") || "");
     const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
     const [priceBucket, setPriceBucket] = useState(searchParams.get("price") || "");
@@ -56,6 +57,9 @@ function Shows() {
         if (theatreName) {
             nextParams.set("theatreName", theatreName);
         }
+        if (movieId) {
+            nextParams.set("movieId", movieId);
+        }
         if (movieFilter) {
             nextParams.set("movie", movieFilter);
         }
@@ -66,19 +70,24 @@ function Shows() {
             nextParams.set("price", priceBucket);
         }
         setSearchParams(nextParams, { replace: true });
-    }, [city, theatreId, theatreName, movieFilter, dateFilter, priceBucket, setSearchParams]);
+    }, [city, theatreId, theatreName, movieId, movieFilter, dateFilter, priceBucket, setSearchParams]);
 
     useEffect(() => {
-        if (!city && !theatreId) {
+        if (!city && !theatreId && !movieId) {
             return;
         }
 
         setLoading(true);
         setError(null);
 
-        const request = theatreId
-            ? api.get(`/shows/theatre/${encodeURIComponent(theatreId)}`)
-            : api.get(`/shows?city=${encodeURIComponent(city)}`);
+        let request;
+        if (theatreId) {
+            request = api.get(`/shows/theatre/${encodeURIComponent(theatreId)}`);
+        } else if (movieId) {
+            request = api.get(`/shows/by-movie?movieId=${encodeURIComponent(movieId)}`);
+        } else {
+            request = api.get(`/shows?city=${encodeURIComponent(city)}`);
+        }
 
         request
             .then((res) => {
@@ -89,7 +98,7 @@ function Shows() {
                 setError("Failed to load shows");
             })
             .finally(() => setLoading(false));
-    }, [city, theatreId]);
+    }, [city, theatreId, movieId]);
 
     const movieOptions = useMemo(() => {
         const unique = new Set(
@@ -164,6 +173,7 @@ function Shows() {
 
         return next;
     }, [shows, movieFilter, dateFilter, priceBucket]);
+    const isSpecificMovieView = Boolean(movieId || movieFilter);
 
     return (
         <div className="page">
@@ -177,7 +187,7 @@ function Shows() {
                     </p>
                 </div>
                 <div className="filters">
-                    {!theatreId && (
+                    {!theatreId && !movieId && (
                         <select value={city} onChange={(e) => setCity(e.target.value)}>
                             {cities.map((item) => (
                                 <option key={item} value={item}>
@@ -225,6 +235,18 @@ function Shows() {
                             Clear theatre
                         </button>
                     )}
+                    {movieId && (
+                        <button
+                            className="secondary"
+                            type="button"
+                            onClick={() => {
+                                setMovieId("");
+                                setMovieFilter("");
+                            }}
+                        >
+                            Clear movie
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -238,16 +260,29 @@ function Shows() {
             <div className="card-grid">
                 {filteredShows.map((show) => (
                     <div key={show.showId} className="card">
-                        {show.moviePosterUrl && (
-                            <img
-                                className="movie-poster"
-                                src={show.moviePosterUrl.startsWith("http")
-                                    ? show.moviePosterUrl
-                                    : `${API_BASE_URL}${show.moviePosterUrl}`}
-                                alt={`${show.movieName || "Movie"} poster`}
-                                loading="lazy"
-                            />
-                        )}
+                        {show.moviePosterUrl && (() => {
+                            const posterUrl = show.moviePosterUrl.startsWith("http")
+                                ? show.moviePosterUrl
+                                : `${API_BASE_URL}${show.moviePosterUrl}`;
+                            if (isSpecificMovieView) {
+                                return (
+                                    <div className="poster-cover">
+                                        <div
+                                            className="poster-cover-bg"
+                                            style={{ backgroundImage: `url(${posterUrl})` }}
+                                        />
+                                    </div>
+                                );
+                            }
+                            return (
+                                <img
+                                    className="movie-poster"
+                                    src={posterUrl}
+                                    alt={`${show.movieName || "Movie"} poster`}
+                                    loading="lazy"
+                                />
+                            );
+                        })()}
                         <div className="card-title">{show.movieName}</div>
                         <div className="card-meta">{show.screenName}</div>
                         <div className="card-meta">

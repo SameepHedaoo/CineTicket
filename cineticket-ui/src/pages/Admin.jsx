@@ -3,6 +3,40 @@ import { adminApi, api } from "../api/api";
 
 const CITY_FALLBACK = [];
 
+const parseJwt = (token) => {
+    if (!token) {
+        return null;
+    }
+    try {
+        const payload = token.split(".")[1];
+        const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split("")
+                .map((c) => `%${("00" + c.charCodeAt(0).toString(16)).slice(-2)}`)
+                .join("")
+        );
+        return JSON.parse(jsonPayload);
+    } catch (err) {
+        return null;
+    }
+};
+
+const toDateTimeLocalValue = (date) => {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+};
+
+const getDefaultShowTimes = () => {
+    const start = new Date();
+    start.setSeconds(0, 0);
+    const end = new Date(start.getTime() + 165 * 60000);
+    return {
+        startTime: toDateTimeLocalValue(start),
+        endTime: toDateTimeLocalValue(end),
+    };
+};
+
 function Admin() {
     const [adminEmail, setAdminEmail] = useState("admin@example.com");
     const [adminPassword, setAdminPassword] = useState("Admin@123");
@@ -37,8 +71,7 @@ function Admin() {
     const [showForm, setShowForm] = useState({
         movieId: "",
         screenId: "",
-        startTime: "2026-02-04T20:00:00",
-        endTime: "2026-02-04T22:45:00",
+        ...getDefaultShowTimes(),
         price: 250.0,
     });
 
@@ -49,6 +82,7 @@ function Admin() {
     const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
     const [adminToken, setAdminToken] = useState(localStorage.getItem("adminToken"));
+    const [adminRole, setAdminRole] = useState(parseJwt(localStorage.getItem("adminToken"))?.role || null);
 
     const loadCities = () => {
         api.get("/cities")
@@ -86,6 +120,10 @@ function Admin() {
         loadReferenceData();
     }, [city, adminToken]);
 
+    useEffect(() => {
+        setAdminRole(parseJwt(adminToken)?.role || null);
+    }, [adminToken]);
+
     const screens = useMemo(() => {
         const allScreens = theatres.flatMap((theatre) => theatre.screens || []);
         return allScreens.map((screen) => ({
@@ -93,6 +131,7 @@ function Admin() {
             theatreId: screen.theatreId || screenForm.theatreId,
         }));
     }, [theatres, screenForm.theatreId]);
+    const currentDateTime = toDateTimeLocalValue(new Date());
 
     const handleAdminLogin = async (event) => {
         event.preventDefault();
@@ -107,9 +146,14 @@ function Admin() {
             if (!token) {
                 throw new Error("Token missing");
             }
+            const role = parseJwt(token)?.role;
+            if (role !== "ADMIN") {
+                throw new Error("This account is not an admin.");
+            }
             localStorage.setItem("token", token);
             localStorage.setItem("adminToken", token);
             setAdminToken(token);
+            setAdminRole(role);
             window.dispatchEvent(new Event("auth-changed"));
             setAuthMessage("Admin authenticated.");
         } catch (err) {
@@ -126,6 +170,13 @@ function Admin() {
 
         if (!adminToken) {
             setError("Admin token missing. Please login as admin first.");
+            return;
+        }
+        if (adminRole !== "ADMIN") {
+            localStorage.removeItem("adminToken");
+            setAdminToken(null);
+            setAdminRole(null);
+            setError("Current admin token is not an admin token. Please login as admin again.");
             return;
         }
 
@@ -263,7 +314,7 @@ function Admin() {
                             ))}
                         </select>
                     </div>
-                    <button className="primary" type="submit">
+                    <button className="danger" type="submit">
                         Delete Movie
                     </button>
                 </form>
@@ -408,7 +459,7 @@ function Admin() {
                             ))}
                         </select>
                     </div>
-                    <button className="primary" type="submit">
+                    <button className="danger" type="submit">
                         Delete Theatre
                     </button>
                 </form>
@@ -531,6 +582,7 @@ function Admin() {
                         <input
                             type="datetime-local"
                             value={showForm.startTime}
+                            min={currentDateTime}
                             onChange={(e) => setShowForm({ ...showForm, startTime: e.target.value })}
                         />
                     </div>
@@ -539,6 +591,7 @@ function Admin() {
                         <input
                             type="datetime-local"
                             value={showForm.endTime}
+                            min={showForm.startTime || currentDateTime}
                             onChange={(e) => setShowForm({ ...showForm, endTime: e.target.value })}
                         />
                     </div>
@@ -563,3 +616,4 @@ function Admin() {
 }
 
 export default Admin;
+

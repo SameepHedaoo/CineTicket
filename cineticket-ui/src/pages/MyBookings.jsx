@@ -106,6 +106,9 @@ function MyBookings() {
         }
     };
 
+    const isBookingExpired = (booking) =>
+        String(booking?.status || "").toLowerCase() === "expired";
+
     if (!token) {
         return (
             <div className="page">
@@ -166,7 +169,7 @@ function MyBookings() {
                                 className="secondary"
                                 type="button"
                                 onClick={() => handleDownloadQr(booking)}
-                                disabled={downloadingId === booking.bookingId}
+                                disabled={downloadingId === booking.bookingId || isBookingExpired(booking)}
                             >
                                 {downloadingId === booking.bookingId ? "Preparing..." : "Download QR"}
                             </button>
@@ -174,11 +177,14 @@ function MyBookings() {
                                 className="primary"
                                 type="button"
                                 onClick={() => handleDownloadPdf(booking)}
-                                disabled={downloadingId === booking.bookingId}
+                                disabled={downloadingId === booking.bookingId || isBookingExpired(booking)}
                             >
                                 {downloadingId === booking.bookingId ? "Preparing..." : "Download Ticket"}
                             </button>
                         </div>
+                        {isBookingExpired(booking) && (
+                            <div className="muted">Ticket expired (show time has passed).</div>
+                        )}
                     </div>
                 ))}
             </div>

@@ -40,6 +40,11 @@ public class ShowController {
         return showService.getShowsByScreen(screenId);
     }
 
+    @GetMapping("/by-movie")
+    public List<ShowResponse> getShowsByMovie(@RequestParam Long movieId) {
+        return showService.getShowsByMovie(movieId);
+    }
+
     @GetMapping("/by-movie-theatre")
     public List<ShowResponse> getShowsByMovieAndTheatre(
             @RequestParam Long movieId,

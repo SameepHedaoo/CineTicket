@@ -31,6 +31,7 @@ public class MovieService {
     private final ShowSeatRepository showSeatRepository;
     private final BookingRepository bookingRepository;
     private final String uploadDir;
+    private final String posterStorage;
     private final GitHubImageStorageService gitHubImageStorageService;
 
     public MovieService(MovieRepository movieRepository,
@@ -38,12 +39,14 @@ public class MovieService {
             ShowSeatRepository showSeatRepository,
             BookingRepository bookingRepository,
             @Value("${app.upload.dir:uploads}") String uploadDir,
+            @Value("${app.poster.storage:local}") String posterStorage,
             GitHubImageStorageService gitHubImageStorageService) {
         this.movieRepository = movieRepository;
         this.showRepository = showRepository;
         this.showSeatRepository = showSeatRepository;
         this.bookingRepository = bookingRepository;
         this.uploadDir = uploadDir;
+        this.posterStorage = posterStorage;
         this.gitHubImageStorageService = gitHubImageStorageService;
     }
 
@@ -121,7 +124,8 @@ public class MovieService {
             throw new RuntimeException("Failed to read poster file", ex);
         }
 
-        if (gitHubImageStorageService.isEnabled()) {
+        boolean githubSelected = "github".equalsIgnoreCase(posterStorage);
+        if (githubSelected && gitHubImageStorageService.isEnabled()) {
             return gitHubImageStorageService.uploadPoster(bytes, fileName);
         }
 
@@ -134,6 +138,22 @@ public class MovieService {
         } catch (IOException ex) {
             throw new RuntimeException("Failed to store poster", ex);
         }
+    }
+
+    @Transactional
+    public MovieResponse updateMoviePoster(Long movieId, String posterUrl) {
+        MovieEntity movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
+        movie.setPosterUrl(posterUrl);
+        MovieEntity saved = movieRepository.save(movie);
+        return new MovieResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getDescription(),
+                saved.getLanguage(),
+                saved.getDuration(),
+                saved.getGenre(),
+                saved.getPosterUrl());
     }
 
     private String getFileExtension(String originalFileName) {

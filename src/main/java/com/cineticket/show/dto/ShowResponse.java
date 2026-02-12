@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public class ShowResponse {
     private Long showId;
+    private Long movieId;
     private String movieName;
     private String moviePosterUrl;
     private String screenName;
@@ -13,9 +14,10 @@ public class ShowResponse {
     private Integer availableSeats;
     private Integer totalSeats;
 
-    public ShowResponse(Long showId, String movieName, String moviePosterUrl, String screenName, LocalDateTime startTime, BigDecimal price,
+    public ShowResponse(Long showId, Long movieId, String movieName, String moviePosterUrl, String screenName, LocalDateTime startTime, BigDecimal price,
             Integer availableSeats, Integer totalSeats) {
         this.showId = showId;
+        this.movieId = movieId;
         this.movieName = movieName;
         this.moviePosterUrl = moviePosterUrl;
         this.screenName = screenName;
@@ -40,6 +42,14 @@ public class ShowResponse {
 
     public void setMovieName(String movieName) {
         this.movieName = movieName;
+    }
+
+    public Long getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(Long movieId) {
+        this.movieId = movieId;
     }
 
     public String getMoviePosterUrl() {

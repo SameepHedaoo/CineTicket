@@ -20,6 +20,21 @@ const parseJwt = (token) => {
     }
 };
 
+const toDateTimeLocalValue = (date) => {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+};
+
+const getDefaultShowTimes = () => {
+    const start = new Date();
+    start.setSeconds(0, 0);
+    const end = new Date(start.getTime() + 150 * 60000);
+    return {
+        startTime: toDateTimeLocalValue(start),
+        endTime: toDateTimeLocalValue(end),
+    };
+};
+
 function Manager() {
     const [theatreId, setTheatreId] = useState(null);
     const [role, setRole] = useState(null);
@@ -38,6 +53,9 @@ function Manager() {
         posterUrl: "",
     });
     const [moviePosterFile, setMoviePosterFile] = useState(null);
+    const [deleteMovieId, setDeleteMovieId] = useState("");
+    const [posterMovieId, setPosterMovieId] = useState("");
+    const [existingPosterFile, setExistingPosterFile] = useState(null);
 
     const [screenForm, setScreenForm] = useState({
         name: "Screen 1",
@@ -47,8 +65,7 @@ function Manager() {
     const [showForm, setShowForm] = useState({
         movieId: "",
         screenId: "",
-        startTime: "2026-02-05T20:00:00",
-        endTime: "2026-02-05T22:30:00",
+        ...getDefaultShowTimes(),
         price: 250.0,
     });
 
@@ -85,6 +102,7 @@ function Manager() {
     }, [theatreId]);
 
     const screens = useMemo(() => theatre?.screens || [], [theatre]);
+    const currentDateTime = toDateTimeLocalValue(new Date());
 
     const handleSubmit = async (event, action) => {
         event.preventDefault();
@@ -169,7 +187,7 @@ function Manager() {
                             if (moviePosterFile) {
                                 const formData = new FormData();
                                 formData.append("file", moviePosterFile);
-                                const uploadResponse = await api.post("/admin/movies/upload-poster", formData, {
+                                const uploadResponse = await api.post("/movies/upload-poster", formData, {
                                     headers: { "Content-Type": "multipart/form-data" },
                                     silentSuccessToast: true,
                                 });
@@ -288,6 +306,92 @@ function Manager() {
 
                 <form
                     className="card admin-card"
+                    onSubmit={(event) =>
+                        handleSubmit(event, async () => {
+                            if (!deleteMovieId) {
+                                throw new Error("Select a movie to delete.");
+                            }
+                            await api.delete(`/movies/${Number(deleteMovieId)}`);
+                            setDeleteMovieId("");
+                            return "Movie deleted.";
+                        })
+                    }
+                >
+                    <div className="card-title">Delete Movie</div>
+                    <div className="field">
+                        <span>Movie</span>
+                        <select
+                            value={deleteMovieId}
+                            onChange={(e) => setDeleteMovieId(e.target.value)}
+                        >
+                            <option value="">Select movie</option>
+                            {movies.map((movie) => (
+                                <option key={movie.id || movie.movieId} value={movie.id || movie.movieId}>
+                                    {movie.title || movie.name || movie.movieTitle}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button className="danger" type="submit">
+                        Delete Movie
+                    </button>
+                </form>
+
+                <form
+                    className="card admin-card"
+                    onSubmit={(event) =>
+                        handleSubmit(event, async () => {
+                            if (!posterMovieId) {
+                                throw new Error("Select a movie to update poster.");
+                            }
+                            if (!existingPosterFile) {
+                                throw new Error("Choose a poster image file.");
+                            }
+                            const formData = new FormData();
+                            formData.append("file", existingPosterFile);
+                            await api.post(`/movies/${Number(posterMovieId)}/poster`, formData, {
+                                headers: { "Content-Type": "multipart/form-data" },
+                            });
+                            setExistingPosterFile(null);
+                            return "Movie poster updated.";
+                        })
+                    }
+                >
+                    <div className="card-title">Update Existing Movie Poster</div>
+                    <div className="field">
+                        <span>Movie</span>
+                        <select
+                            value={posterMovieId}
+                            onChange={(e) => setPosterMovieId(e.target.value)}
+                        >
+                            <option value="">Select movie</option>
+                            {movies.map((movie) => (
+                                <option key={movie.id || movie.movieId} value={movie.id || movie.movieId}>
+                                    {movie.title || movie.name || movie.movieTitle}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="field">
+                        <span>Poster</span>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setExistingPosterFile(e.target.files?.[0] || null)}
+                        />
+                        <span className="muted">
+                            {existingPosterFile
+                                ? `Selected: ${existingPosterFile.name}`
+                                : "Choose image for selected movie."}
+                        </span>
+                    </div>
+                    <button className="primary" type="submit">
+                        Update Poster
+                    </button>
+                </form>
+
+                <form
+                    className="card admin-card"
                     ref={createShowRef}
                     onSubmit={(event) =>
                         handleSubmit(event, async () => {
@@ -335,6 +439,7 @@ function Manager() {
                         <input
                             type="datetime-local"
                             value={showForm.startTime}
+                            min={currentDateTime}
                             onChange={(e) => setShowForm({ ...showForm, startTime: e.target.value })}
                         />
                     </div>
@@ -343,6 +448,7 @@ function Manager() {
                         <input
                             type="datetime-local"
                             value={showForm.endTime}
+                            min={showForm.startTime || currentDateTime}
                             onChange={(e) => setShowForm({ ...showForm, endTime: e.target.value })}
                         />
                     </div>
@@ -387,7 +493,7 @@ function Manager() {
                             ))}
                         </select>
                     </div>
-                    <button className="primary" type="submit">
+                    <button className="danger" type="submit">
                         Delete Screen
                     </button>
                 </form>
@@ -400,3 +506,4 @@ function Manager() {
 }
 
 export default Manager;
+
