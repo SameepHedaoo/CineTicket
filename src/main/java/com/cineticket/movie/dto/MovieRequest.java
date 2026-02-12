@@ -6,6 +6,7 @@ public class MovieRequest {
     private String language;
     private Integer durationMinutes;
     private String genre;
+    private String posterUrl;
 
     public String getTitle() {
         return title;
@@ -45,5 +46,13 @@ public class MovieRequest {
 
     public void setGenre(String genre) {
         this.genre = genre;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
     }
 }

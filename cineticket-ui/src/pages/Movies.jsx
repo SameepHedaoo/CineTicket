@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/api";
+import { API_BASE_URL, api } from "../api/api";
 import { useNavigate } from "react-router-dom";
 
 function Movies() {
@@ -17,6 +17,7 @@ function Movies() {
                 const normalizedMovies = (res.data || []).map((movie) => ({
                     id: movie.id ?? movie.movieId,
                     name: movie.name ?? movie.title ?? movie.movieTitle,
+                    posterUrl: movie.posterUrl || null,
                 }));
                 setMovies(normalizedMovies);
             })
@@ -48,6 +49,14 @@ function Movies() {
                             navigate(`/shows?movie=${encodeURIComponent(movie.name || "")}`)
                         }
                     >
+                        {movie.posterUrl && (
+                            <img
+                                className="movie-poster"
+                                src={movie.posterUrl.startsWith("http") ? movie.posterUrl : `${API_BASE_URL}${movie.posterUrl}`}
+                                alt={`${movie.name} poster`}
+                                loading="lazy"
+                            />
+                        )}
                         <div className="card-title">{movie.name}</div>
                         <div className="card-meta">Tap to view shows</div>
                     </div>

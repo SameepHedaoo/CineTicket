@@ -19,6 +19,14 @@ public interface ShowRepository extends JpaRepository<Show, Long> {
     List<Show> findByScreenTheatreCity(@Param("city") String city);
 
     @Query("""
+                SELECT DISTINCT TRIM(s.screen.theatre.city)
+                FROM Show s
+                WHERE s.screen.theatre.city IS NOT NULL
+                AND TRIM(s.screen.theatre.city) <> ''
+            """)
+    List<String> findDistinctCitiesWithShows();
+
+    @Query("""
                 SELECT s FROM Show s
                 WHERE s.screen.id = :screenId
                 AND (

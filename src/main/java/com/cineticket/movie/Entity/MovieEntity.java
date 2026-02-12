@@ -33,6 +33,9 @@ public class MovieEntity {
 
     private String genre;
 
+    @Column(name = "poster_url")
+    private String posterUrl;
+
     public Long getId() {
         return id;
     }
@@ -87,6 +90,14 @@ public class MovieEntity {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
     }
 
     private Integer rating;

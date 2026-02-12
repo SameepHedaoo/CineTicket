@@ -60,7 +60,7 @@ function Admin() {
                 }
                 if (list.length > 0) {
                     setTheatreForm((prev) =>
-                        list.includes(prev.city) ? prev : { ...prev, city: list[0] }
+                        prev.city ? prev : { ...prev, city: list[0] }
                     );
                 }
             })
@@ -84,7 +84,7 @@ function Admin() {
     useEffect(() => {
         loadCities();
         loadReferenceData();
-    }, [city]);
+    }, [city, adminToken]);
 
     const screens = useMemo(() => {
         const allScreens = theatres.flatMap((theatre) => theatre.screens || []);
@@ -346,16 +346,17 @@ function Admin() {
                     </div>
                     <div className="field">
                         <span>City</span>
-                        <select
+                        <input
+                            list="admin-city-options"
                             value={theatreForm.city}
                             onChange={(e) => setTheatreForm({ ...theatreForm, city: e.target.value })}
-                        >
+                            placeholder="Type or select city (e.g. Bhopal)"
+                        />
+                        <datalist id="admin-city-options">
                             {cities.map((item) => (
-                                <option key={item} value={item}>
-                                    {item}
-                                </option>
+                                <option key={item} value={item} />
                             ))}
-                        </select>
+                        </datalist>
                     </div>
                     <div className="field">
                         <span>Address</span>

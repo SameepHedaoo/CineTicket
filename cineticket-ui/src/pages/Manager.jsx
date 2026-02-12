@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "../api/api";
+import { API_BASE_URL, api } from "../api/api";
 
 const parseJwt = (token) => {
     if (!token) {
@@ -35,7 +35,9 @@ function Manager() {
         language: "EN",
         durationMinutes: 169,
         genre: "Sci-Fi",
+        posterUrl: "",
     });
+    const [moviePosterFile, setMoviePosterFile] = useState(null);
 
     const [screenForm, setScreenForm] = useState({
         name: "Screen 1",
@@ -163,7 +165,22 @@ function Manager() {
                     className="card admin-card"
                     onSubmit={(event) =>
                         handleSubmit(event, async () => {
-                            const response = await api.post("/admin/movies/add", movieForm);
+                            let posterUrl = movieForm.posterUrl || "";
+                            if (moviePosterFile) {
+                                const formData = new FormData();
+                                formData.append("file", moviePosterFile);
+                                const uploadResponse = await api.post("/admin/movies/upload-poster", formData, {
+                                    headers: { "Content-Type": "multipart/form-data" },
+                                    silentSuccessToast: true,
+                                });
+                                posterUrl = uploadResponse.data?.posterUrl || "";
+                            }
+                            const response = await api.post("/admin/movies/add", {
+                                ...movieForm,
+                                posterUrl,
+                            });
+                            setMoviePosterFile(null);
+                            setMovieForm((prev) => ({ ...prev, posterUrl }));
                             return `Movie created: ${response.data?.id || response.data?.movieId}`;
                         })
                     }
@@ -211,6 +228,21 @@ function Manager() {
                             value={movieForm.genre}
                             onChange={(e) => setMovieForm({ ...movieForm, genre: e.target.value })}
                         />
+                    </div>
+                    <div className="field">
+                        <span>Poster</span>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setMoviePosterFile(e.target.files?.[0] || null)}
+                        />
+                        <span className="muted">
+                            {moviePosterFile
+                                ? `Selected: ${moviePosterFile.name}`
+                                : movieForm.posterUrl
+                                    ? `Using uploaded poster: ${API_BASE_URL}${movieForm.posterUrl}`
+                                    : "Optional image, max 5 MB."}
+                        </span>
                     </div>
                     <button className="primary" type="submit">
                         Create Movie

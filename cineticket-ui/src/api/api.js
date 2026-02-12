@@ -1,6 +1,8 @@
 import axios from "axios";
 import { notifySuccess } from "../ui/notificationBus";
 
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
 const isMutatingRequest = (config) => {
     const method = String(config?.method || "get").toLowerCase();
     return method !== "get" && method !== "head" && method !== "options";
@@ -45,7 +47,7 @@ const attachSuccessToastInterceptor = (client) => {
 };
 
 export const api = axios.create({
-    baseURL: "http://localhost:8080",
+    baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {
@@ -58,7 +60,7 @@ api.interceptors.request.use((config) => {
 attachSuccessToastInterceptor(api);
 
 export const adminApi = axios.create({
-    baseURL: "http://localhost:8080",
+    baseURL: API_BASE_URL,
 });
 
 adminApi.interceptors.request.use((config) => {

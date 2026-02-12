@@ -147,6 +147,15 @@
   font-weight: 700;
 }
 
+.movie-poster {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  background: #eef2f7;
+}
+
 .card-meta {
   color: #52606d;
   font-size: 0.9rem;

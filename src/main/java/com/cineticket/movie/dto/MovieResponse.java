@@ -7,15 +7,17 @@ public class MovieResponse {
     private String language;
     private Integer durationMinutes;
     private String genre;
+    private String posterUrl;
 
     public MovieResponse(Long id, String title, String description, String language, Integer durationMinutes,
-            String genre) {
+            String genre, String posterUrl) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.language = language;
         this.durationMinutes = durationMinutes;
         this.genre = genre;
+        this.posterUrl = posterUrl;
     }
 
     public Long getId() {
@@ -64,5 +66,13 @@ public class MovieResponse {
 
     public void setGenre(String genre) {
         this.genre = genre;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
     }
 }

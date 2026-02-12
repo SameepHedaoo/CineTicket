@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api } from "../api/api";
+import { API_BASE_URL, api } from "../api/api";
 
 const CITY_FALLBACK = [];
 const DATE_FILTERS = [
@@ -91,12 +91,29 @@ function Shows() {
             .finally(() => setLoading(false));
     }, [city, theatreId]);
 
+    const movieOptions = useMemo(() => {
+        const unique = new Set(
+            (shows || [])
+                .map((show) => (show.movieName || "").trim())
+                .filter(Boolean)
+        );
+        return Array.from(unique).sort((a, b) => a.localeCompare(b));
+    }, [shows]);
+
+    useEffect(() => {
+        if (!movieFilter) {
+            return;
+        }
+        if (!movieOptions.includes(movieFilter)) {
+            setMovieFilter("");
+        }
+    }, [movieFilter, movieOptions]);
+
     const filteredShows = useMemo(() => {
         let next = shows;
 
         if (movieFilter) {
-            const needle = movieFilter.toLowerCase();
-            next = next.filter((show) => (show.movieName || "").toLowerCase().includes(needle));
+            next = next.filter((show) => (show.movieName || "") === movieFilter);
         }
 
         if (dateFilter) {
@@ -188,12 +205,14 @@ function Shows() {
                             </option>
                         ))}
                     </select>
-                    <input
-                        type="text"
-                        placeholder="Filter by movie name"
-                        value={movieFilter}
-                        onChange={(e) => setMovieFilter(e.target.value)}
-                    />
+                    <select value={movieFilter} onChange={(e) => setMovieFilter(e.target.value)}>
+                        <option value="">All movies</option>
+                        {movieOptions.map((movieName) => (
+                            <option key={movieName} value={movieName}>
+                                {movieName}
+                            </option>
+                        ))}
+                    </select>
                     {theatreId && (
                         <button
                             className="secondary"
@@ -219,6 +238,16 @@ function Shows() {
             <div className="card-grid">
                 {filteredShows.map((show) => (
                     <div key={show.showId} className="card">
+                        {show.moviePosterUrl && (
+                            <img
+                                className="movie-poster"
+                                src={show.moviePosterUrl.startsWith("http")
+                                    ? show.moviePosterUrl
+                                    : `${API_BASE_URL}${show.moviePosterUrl}`}
+                                alt={`${show.movieName || "Movie"} poster`}
+                                loading="lazy"
+                            />
+                        )}
                         <div className="card-title">{show.movieName}</div>
                         <div className="card-meta">{show.screenName}</div>
                         <div className="card-meta">

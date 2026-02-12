@@ -1,0 +1,1 @@
+ALTER TABLE movies ADD poster_url VARCHAR2(1024 CHAR);

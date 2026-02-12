@@ -22,6 +22,6 @@ public class CityController {
 
     @GetMapping
     public List<CityResponse> list() {
-        return cityService.getAllCities();
+        return cityService.getCitiesForCurrentRole();
     }
 }

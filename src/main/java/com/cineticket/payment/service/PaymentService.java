@@ -11,8 +11,6 @@ import com.cineticket.booking.entity.PaymentStatus;
 import com.cineticket.booking.repository.BookingRepository;
 import com.cineticket.booking.service.BookingMapper;
 import com.cineticket.show.Service.ShowSeatService;
-import com.razorpay.RazorpayClient;
-import com.cineticket.payment.config.RazorpayConfig;
 import com.cineticket.payment.dto.PaymentRequest;
 
 import jakarta.transaction.Transactional;
@@ -22,17 +20,11 @@ public class PaymentService {
 
     private final BookingRepository bookingRepository;
     private final ShowSeatService showSeatService;
-    private final RazorpayClient razorpayClient;
-    private final RazorpayConfig razorpayConfig;
 
     public PaymentService(BookingRepository bookingRepository,
-            ShowSeatService showSeatService,
-            RazorpayClient razorpayClient,
-            RazorpayConfig razorpayConfig) {
+            ShowSeatService showSeatService) {
         this.bookingRepository = bookingRepository;
         this.showSeatService = showSeatService;
-        this.razorpayClient = razorpayClient;
-        this.razorpayConfig = razorpayConfig;
     }
 
     @Transactional

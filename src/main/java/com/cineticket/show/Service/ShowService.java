@@ -165,6 +165,7 @@ public class ShowService {
         return new ShowResponse(
                 showId,
                 show.getMovie().getTitle(),
+                show.getMovie().getPosterUrl(),
                 show.getScreen().getScreenName(),
                 show.getStartTime(),
                 show.getPrice(),

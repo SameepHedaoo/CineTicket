@@ -1,9 +1,17 @@
 package com.cineticket.movie.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.transaction.Transactional;
 
@@ -22,15 +30,21 @@ public class MovieService {
     private final ShowRepository showRepository;
     private final ShowSeatRepository showSeatRepository;
     private final BookingRepository bookingRepository;
+    private final String uploadDir;
+    private final GitHubImageStorageService gitHubImageStorageService;
 
     public MovieService(MovieRepository movieRepository,
             ShowRepository showRepository,
             ShowSeatRepository showSeatRepository,
-            BookingRepository bookingRepository) {
+            BookingRepository bookingRepository,
+            @Value("${app.upload.dir:uploads}") String uploadDir,
+            GitHubImageStorageService gitHubImageStorageService) {
         this.movieRepository = movieRepository;
         this.showRepository = showRepository;
         this.showSeatRepository = showSeatRepository;
         this.bookingRepository = bookingRepository;
+        this.uploadDir = uploadDir;
+        this.gitHubImageStorageService = gitHubImageStorageService;
     }
 
     // ADMIN
@@ -41,6 +55,7 @@ public class MovieService {
         movie.setLanguage(movieRequest.getLanguage());
         movie.setDuration(movieRequest.getDurationMinutes());
         movie.setGenre(movieRequest.getGenre());
+        movie.setPosterUrl(movieRequest.getPosterUrl());
 
         MovieEntity saved = movieRepository.save(movie);
         return new MovieResponse(
@@ -49,7 +64,8 @@ public class MovieService {
                 saved.getDescription(),
                 saved.getLanguage(),
                 saved.getDuration(),
-                saved.getGenre());
+                saved.getGenre(),
+                saved.getPosterUrl());
     }
 
     @Transactional
@@ -75,9 +91,63 @@ public class MovieService {
         List<MovieResponse> responses = new ArrayList<>();
         for (MovieEntity m : movies) {
             MovieResponse response = new MovieResponse(m.getId(), m.getTitle(), m.getDescription(), m.getLanguage(),
-                    m.getDuration(), m.getGenre());
+                    m.getDuration(), m.getGenre(), m.getPosterUrl());
             responses.add(response);
         }
         return responses;
+    }
+
+    public String uploadPoster(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Poster file is required");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        long maxBytes = 5L * 1024L * 1024L;
+        if (file.getSize() > maxBytes) {
+            throw new IllegalArgumentException("Poster must be 5 MB or less");
+        }
+
+        String extension = getFileExtension(file.getOriginalFilename());
+        String fileName = UUID.randomUUID() + extension;
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to read poster file", ex);
+        }
+
+        if (gitHubImageStorageService.isEnabled()) {
+            return gitHubImageStorageService.uploadPoster(bytes, fileName);
+        }
+
+        try {
+            Path posterDir = Paths.get(uploadDir, "posters").toAbsolutePath().normalize();
+            Files.createDirectories(posterDir);
+            Path target = posterDir.resolve(fileName).normalize();
+            Files.write(target, bytes);
+            return "/uploads/posters/" + fileName;
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to store poster", ex);
+        }
+    }
+
+    private String getFileExtension(String originalFileName) {
+        if (originalFileName == null) {
+            return ".jpg";
+        }
+        int idx = originalFileName.lastIndexOf('.');
+        if (idx < 0 || idx == originalFileName.length() - 1) {
+            return ".jpg";
+        }
+        String ext = originalFileName.substring(idx).toLowerCase(Locale.ROOT);
+        if (ext.length() > 10) {
+            return ".jpg";
+        }
+        return ext;
     }
 }
