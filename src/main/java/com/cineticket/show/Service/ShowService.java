@@ -2,6 +2,7 @@ package com.cineticket.show.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,16 @@ public class ShowService {
     // ADMIN METHODS
     @Transactional
     public ShowResponse createShow(ShowRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Show request is required");
+        }
+        if (request.getStartTime() == null || request.getEndTime() == null) {
+            throw new IllegalArgumentException("Start time and end time are required");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (request.getStartTime().isBefore(now)) {
+            throw new IllegalArgumentException("Show start time cannot be in the past");
+        }
         // time
         if (request.getStartTime().isAfter(request.getEndTime())
                 || request.getStartTime().isEqual(request.getEndTime())) {
@@ -116,8 +127,12 @@ public class ShowService {
 
         List<Show> shows = showRepository.findByScreenTheatreCity(city);
         List<ShowResponse> response = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
 
         for (Show show : shows) {
+            if (!isShowActiveForBrowse(show, now)) {
+                continue;
+            }
             response.add(mapToShowResponse(show));
         }
 
@@ -129,8 +144,12 @@ public class ShowService {
         List<Show> shows = showRepository.findByScreen_Theatre_Id(theatreId);
 
         List<ShowResponse> response = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
 
         for (Show show : shows) {
+            if (!isShowActiveForBrowse(show, now)) {
+                continue;
+            }
             response.add(mapToShowResponse(show));
         }
 
@@ -142,8 +161,12 @@ public class ShowService {
         List<Show> shows = showRepository.findByScreenId(screenId);
 
         List<ShowResponse> response = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
 
         for (Show show : shows) {
+            if (!isShowActiveForBrowse(show, now)) {
+                continue;
+            }
             response.add(mapToShowResponse(show));
         }
 
@@ -153,7 +176,11 @@ public class ShowService {
     public List<ShowResponse> getShowsByMovie(Long movieId) {
         List<Show> shows = showRepository.findByMovieId(movieId);
         List<ShowResponse> response = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
         for (Show show : shows) {
+            if (!isShowActiveForBrowse(show, now)) {
+                continue;
+            }
             response.add(mapToShowResponse(show));
         }
         return response;
@@ -199,7 +226,11 @@ public class ShowService {
         }
 
         List<ShowResponse> response = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
         for (Show show : shows) {
+            if (!isShowActiveForBrowse(show, now)) {
+                continue;
+            }
             response.add(mapToShowResponse(show));
         }
 
@@ -232,6 +263,10 @@ public class ShowService {
             return dto;
         }).toList();
         Show show = seats.isEmpty() ? getShowById(showId) : seats.get(0).getShow();
+        LocalDateTime now = LocalDateTime.now();
+        if (!isShowActiveForBrowse(show, now)) {
+            throw new IllegalStateException("Show is expired");
+        }
         String screenName = show.getScreen() != null ? show.getScreen().getScreenName() : null;
         String theatreName = show.getScreen() != null && show.getScreen().getTheatre() != null
                 ? show.getScreen().getTheatre().getName()
@@ -246,6 +281,17 @@ public class ShowService {
                 show.getEndTime(),
                 show.getPrice(),
                 layout);
+    }
+
+    private boolean isShowActiveForBrowse(Show show, LocalDateTime now) {
+        if (show == null) {
+            return false;
+        }
+        LocalDateTime end = show.getEndTime() != null ? show.getEndTime() : show.getStartTime();
+        if (end == null) {
+            return false;
+        }
+        return end.isAfter(now);
     }
 
     private void enforceManagerTheatreAccess(Long theatreId) {

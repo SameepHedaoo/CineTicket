@@ -1,6 +1,7 @@
 package com.cineticket.show.Service;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 
@@ -38,13 +39,24 @@ public class ShowSeatService {
             }
         }
 
+        // Prevent booking/locking seats for shows that already started/ended.
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = seats.get(0).getShow() == null ? null : seats.get(0).getShow().getStartTime();
+        LocalDateTime endTime = seats.get(0).getShow() == null ? null : seats.get(0).getShow().getEndTime();
+        if (endTime != null && endTime.isBefore(now)) {
+            throw new RuntimeException("Show already ended");
+        }
+        if (startTime != null && !startTime.isAfter(now)) {
+            throw new RuntimeException("Show already started");
+        }
+
         for (ShowSeat seat : seats) {
             if (seat.getStatus() != ShowSeatStatus.AVAILABLE) {
                 throw new RuntimeException("Seat not available");
             }
-            seat.setStatus(ShowSeatStatus.LOCKED);
         }
-
+        for (ShowSeat seat : seats) 
+            { seat.setStatus(ShowSeatStatus.LOCKED); }
         return seats;
     }
 
@@ -53,6 +65,7 @@ public class ShowSeatService {
             seat.setStatus(ShowSeatStatus.BOOKED);
         }
     }
+    
 
     public void releaseSeats(List<ShowSeat> seats) {
         for (ShowSeat seat : seats) {

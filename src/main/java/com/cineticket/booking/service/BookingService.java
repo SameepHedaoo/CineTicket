@@ -212,4 +212,35 @@ public class BookingService {
             booking.setStatus(BookingStatus.EXPIRED);
         }
     }
+@Transactional
+public BookingResponse paymentFailed(Long bookingId) {
+    Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() ->
+                    new RuntimeException("Booking not found"));
+
+    // Don't release seats for an already completed booking.
+    if (booking.getStatus() == BookingStatus.CONFIRMED
+            || booking.getPaymentStatus() == PaymentStatus.PAID) {
+        throw new RuntimeException(
+                "Cannot mark a paid booking as failed");
+    }
+
+    // Make retries safe.
+    if (booking.getStatus() == BookingStatus.CANCELLED) {
+        return BookingMapper.toBookingResponse(booking);
+    }
+
+    if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+        throw new RuntimeException(
+                "Booking is not in progress");
+    }
+
+    showSeatService.releaseSeats(booking.getShowSeats());
+
+    booking.setPaymentStatus(PaymentStatus.FAILED);
+    booking.setStatus(BookingStatus.CANCELLED);
+
+    return BookingMapper.toBookingResponse(booking);
+}
+
 }
